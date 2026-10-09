@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0A0E1A">
+  <meta name="color-scheme" content="dark light">
   <title>W FILE MANAGER</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -11,43 +12,44 @@
   <canvas id="ambient" aria-hidden="true"></canvas>
   <header class="topbar">
     <button class="icon-button" id="menu-button" aria-label="Abrir menú" aria-expanded="false">☰</button>
-    <div class="brand"><span class="brand-mark">W</span><span>W FILE MANAGER</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">W</span><span>W FILE MANAGER</span></div>
     <button class="icon-button" id="more-button" aria-label="Más opciones">⋮</button>
   </header>
-  <aside class="drawer" id="drawer" hidden>
+  <aside class="drawer" id="drawer" aria-label="Menú principal" hidden>
     <button data-view="home">Inicio</button>
     <button data-view="internal">Almacenamiento interno</button>
     <button data-view="sd">Tarjeta SD</button>
     <button data-view="favorites">Destacados</button>
     <button data-view="safe">Carpeta segura</button>
-    <button id="theme-button">Cambiar tema</button>
+    <div class="drawer-divider" aria-hidden="true"></div>
+    <button id="theme-button" aria-pressed="false">Cambiar tema</button>
   </aside>
   <main id="app-main">
     <section class="welcome">
       <p class="eyebrow">EXPLORADOR PERSONAL</p>
-      <h1>Todo tus archivos.<br><span>En un solo lugar.</span></h1>
+      <h1>Todos tus archivos.<br><span>En un solo lugar.</span></h1>
       <p class="muted">Una experiencia clara, rápida y bajo tu control.</p>
     </section>
-    <section class="storage-card">
-      <div class="storage-heading"><span class="status-dot"></span><span>Almacenamiento</span><span class="pill">LOCAL</span></div>
-      <div class="storage-track"><span></span></div>
-      <p class="muted" id="storage-note">La conexión con el almacenamiento se habilitará en la siguiente fase.</p>
+    <section class="storage-card" aria-labelledby="storage-title">
+      <div class="storage-heading"><span class="status-dot" aria-hidden="true"></span><span id="storage-title">Almacenamiento</span><span class="pill">LOCAL</span></div>
+      <div class="storage-track" aria-hidden="true"><span></span></div>
+      <p class="muted" id="storage-note">El espacio disponible aparecerá al conectar el almacenamiento real.</p>
     </section>
     <section class="section-heading"><div><p class="eyebrow">ACCESO RÁPIDO</p><h2>Explorar por categoría</h2></div></section>
-    <section class="category-grid">
-      <button class="category" data-view="documents"><span class="category-icon">▤</span><span>Documentos</span><small>PDF, TXT y más</small></button>
-      <button class="category" data-view="images"><span class="category-icon">▧</span><span>Imágenes</span><small>Fotos y gráficos</small></button>
-      <button class="category" data-view="audio"><span class="category-icon">♫</span><span>Audio</span><small>Música y sonidos</small></button>
-      <button class="category" data-view="archives"><span class="category-icon">▣</span><span>Archivos ZIP</span><small>Comprimidos</small></button>
+    <section class="category-grid" aria-label="Categorías de archivos">
+      <button class="category" data-view="documents"><span class="category-icon" aria-hidden="true">▤</span><span>Documentos</span><small>PDF, TXT y más</small></button>
+      <button class="category" data-view="images"><span class="category-icon" aria-hidden="true">▧</span><span>Imágenes</span><small>Fotos y gráficos</small></button>
+      <button class="category" data-view="audio"><span class="category-icon" aria-hidden="true">♫</span><span>Audio</span><small>Música y sonidos</small></button>
+      <button class="category" data-view="archives"><span class="category-icon" aria-hidden="true">▣</span><span>Archivos ZIP</span><small>Comprimidos</small></button>
     </section>
-    <section class="notice" role="status"><span class="notice-icon">i</span><p id="native-status">Interfaz lista. Las funciones de archivos se conectarán en próximas fases.</p></section>
+    <section class="notice" role="status" aria-live="polite"><span class="notice-icon" aria-hidden="true">i</span><p id="native-status">Interfaz lista. Las funciones de archivos se conectarán en próximas fases.</p></section>
   </main>
   <nav class="bottom-nav" aria-label="Navegación principal">
-    <button class="nav-item active" data-view="home"><span>⌂</span><small>Inicio</small></button>
-    <button class="nav-item" data-view="internal"><span>▤</span><small>Interno</small></button>
-    <button class="nav-item" data-view="sd"><span>▰</span><small>SD</small></button>
-    <button class="nav-item" data-view="favorites"><span>☆</span><small>Destacados</small></button>
-    <button class="nav-item" data-view="safe"><span>⬡</span><small>Segura</small></button>
+    <button class="nav-item active" data-view="home" aria-current="page"><span aria-hidden="true">⌂</span><small>Inicio</small></button>
+    <button class="nav-item" data-view="internal"><span aria-hidden="true">▤</span><small>Interno</small></button>
+    <button class="nav-item" data-view="sd"><span aria-hidden="true">▰</span><small>SD</small></button>
+    <button class="nav-item" data-view="favorites"><span aria-hidden="true">☆</span><small>Destacados</small></button>
+    <button class="nav-item" data-view="safe"><span aria-hidden="true">⬡</span><small>Segura</small></button>
   </nav>
   <script src="app.js"></script>
 </body>
