@@ -43,7 +43,8 @@
       <button class="category" data-view="audio"><span class="category-icon" aria-hidden="true">♫</span><span>Audio</span><small>Música y sonidos</small></button>
       <button class="category" data-view="archives"><span class="category-icon" aria-hidden="true">▣</span><span>Archivos ZIP</span><small>Comprimidos</small></button>
     </section>
-    <section class="notice" role="status" aria-live="polite"><span class="notice-icon" aria-hidden="true">i</span><p id="native-status">Interfaz lista. Las funciones de archivos se conectarán en próximas fases.</p></section>
+    <section class="file-panel" id="file-panel" aria-labelledby="files-title" hidden><div class="section-heading"><p class="eyebrow">CARPETA SELECCIONADA</p><h2 id="files-title">Contenido real</h2></div><ul id="file-list" class="file-list" aria-live="polite"></ul></section>
+    <section class="notice" role="status" aria-live="polite"><span class="notice-icon" aria-hidden="true">i</span><p id="native-status">Interfaz lista. Seleccioná una carpeta para ver sus archivos.</p></section>
   </main>
   <nav class="bottom-nav" aria-label="Navegación principal">
     <button class="nav-item active" data-view="home" aria-current="page"><span aria-hidden="true">⌂</span><small>Inicio</small></button>

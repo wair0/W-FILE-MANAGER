@@ -48,7 +48,7 @@ Objetivo:
 Criterio de salida:
 - ./gradlew assembleDebug compila con JDK/SDK adecuados.
 - App abre la UI local; navegación externa no puede acceder al puente; no hay errores de recursos.
-Estado: EN PROGRESO. La compilación aún debe ejecutarse en un entorno Android real.
+Estado: EN PROGRESO. Se añadió workflow de GitHub Actions para compilar y publicar el APK debug como artifact. La compilación aún debe verificarse en una ejecución real.
 
 FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN HTML/CSS/GLSL (1–2 commits)
 Objetivo:
@@ -61,11 +61,13 @@ Objetivo:
 - GLSL solo para efectos útiles, con fallback.
 Criterio de salida:
 - Todas las vistas tienen el mismo lenguaje visual y la navegación funciona sin controles muertos.
-Estado: PARCIAL. Hay una portada inicial y navegación visual de demostración; el icono es provisional.
+Estado: PARCIAL. Portada, navegación, tema, accesibilidad básica y listado visual de archivos seleccionados; el icono sigue siendo provisional.
 
 FASE 3 — PERMISOS Y ACCESO A ALMACENAMIENTO (1–2 commits)
 Objetivo:
 - Definir la matriz de permisos según versión Android y caso de uso.
+- Selector SAF con persistencia de permiso y recuperación del URI autorizado tras recrear la Activity.
+- Primera lectura de hijos de la carpeta autorizada usando DocumentsContract; no solicita acceso global al almacenamiento.
 - Usar Storage Access Framework cuando corresponda; solicitar MANAGE_EXTERNAL_STORAGE solo si la funcionalidad y distribución lo justifican.
 - Manejar denegación, revocación, URI persistentes, volúmenes desmontados, SD no disponible y rutas inaccesibles.
 - No solicitar permisos al iniciar sin contexto; explicar por qué se necesitan.
@@ -129,6 +131,11 @@ Objetivo:
 - Generar APK/AAB firmado en entorno seguro; nunca subir keystore ni contraseñas.
 Criterio de salida:
 - assembleDebug y assembleRelease ejecutados, pruebas registradas y limitaciones documentadas.
+
+REGISTRO DE AVANCE — 2026-10-09
+- Commit de implementación: listado inicial de archivos vía SAF y recuperación del permiso persistente; validación pendiente de Actions.
+- Workflow `.github/workflows/android-ci.yml`: compila `assembleDebug` con JDK 17 y Gradle 8.9 y publica el APK como artifact durante 14 días si la compilación finaliza correctamente.
+- No se afirma que el build pase hasta revisar el run de Actions.
 
 PRÓXIMOS PASOS INMEDIATOS
 1. Obtener/añadir Gradle Wrapper y verificar compatibilidad de versiones.

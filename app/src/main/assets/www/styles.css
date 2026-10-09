@@ -6,3 +6,5 @@
 .primary-action:focus-visible,.icon-button:focus-visible,.category:focus-visible,.nav-item:focus-visible,.drawer button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 body.light .primary-action{background:#e4edff;border-color:#b6ccf4}
 .drawer-divider{height:1px;background:var(--line);margin:6px 10px}
+
+.file-panel{margin-top:26px}.file-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel)}.file-row{display:flex;align-items:center;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line);min-width:0}.file-row:last-child{border-bottom:0}.file-kind{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:11px;background:#073447;color:var(--accent);font-size:18px}.file-details{display:flex;flex-direction:column;gap:4px;min-width:0}.file-name{overflow-wrap:anywhere;font-size:13px;font-weight:650}.file-details small{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.empty-files{padding:22px;text-align:center;color:var(--muted);font-size:13px}body.light .file-list{background:#fff}body.light .file-kind{background:#e4edff}
