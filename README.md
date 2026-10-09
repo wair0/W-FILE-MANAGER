@@ -1,5 +1,15 @@
 # W FILE MANAGER
 
-Gestor de archivos para Android. Arquitectura: interfaz HTML/CSS/GLSL dentro de WebView; JavaScript como capa de interacción; Kotlin para lógica de negocio e integración nativa con Android.
+Gestor de archivos Android con arquitectura separada:
+- **HTML/CSS**: estructura, diseño adaptable, temas, iconos y animaciones.
+- **JavaScript**: interacción de la interfaz y comunicación mediante una API limitada.
+- **GLSL/WebGL**: efectos gráficos opcionales.
+- **Kotlin**: lógica de negocio e integración nativa con Android.
 
-El proyecto se desarrolla por fases pequeñas y verificables. La referencia inicial de interfaz está en `preview/`.
+## Estado
+Fase 1: base Android con WebView local y puente JavaScript-Kotlin.
+Las operaciones reales de archivos se incorporarán en fases posteriores. No se debe exponer acceso arbitrario al sistema de archivos a JavaScript.
+
+## Estructura
+- `app/src/main/assets/www/`: interfaz web local.
+- `app/src/main/java/com/w/files/`: aplicación nativa Kotlin.
