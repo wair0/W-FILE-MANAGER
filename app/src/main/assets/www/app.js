@@ -10,22 +10,48 @@
   try{if(localStorage.getItem("wfm-theme")==="light")document.body.classList.add("light");}catch(_){}
   const fileList=document.getElementById("file-list");
   const filePanel=document.getElementById("file-panel");
+  const searchInput=document.getElementById("file-search");
+  const pathLabel=document.getElementById("current-path");
+  let allItems=[];
+  let activeFilter="all";
   function renderFiles(payload){
     filePanel.hidden=false;fileList.replaceChildren();
     if(payload.error){status.textContent=payload.error;return;}
-    const items=Array.isArray(payload.items)?payload.items:[];
-    if(!items.length){fileList.innerHTML='<li class="empty-files">Esta carpeta está vacía.</li>';status.textContent="Carpeta leída correctamente: no contiene elementos.";return;}
-    items.sort((a,b)=>Number(b.directory)-Number(a.directory)||a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
+    allItems=Array.isArray(payload.items)?payload.items:[];
+    pathLabel.textContent=payload.pathDepth?"Subcarpeta · "+payload.pathDepth+" nivel(es)":"Carpeta inicial";
+    document.getElementById("go-up").disabled=!payload.canGoUp;
+    drawFilteredFiles();
+  }
+  function drawFilteredFiles(){
+    fileList.replaceChildren();
+    const query=(searchInput.value||"").trim().toLocaleLowerCase();
+    const items=allItems.filter(item=>{
+      const mime=(item.mimeType||"").toLowerCase(),name=(item.name||"").toLowerCase();
+      const queryMatch=name.includes(query);
+      const filterMatch=activeFilter==="all"||
+        (activeFilter==="documents"&&(mime.includes("pdf")||mime.startsWith("text/")||/\.(docx?|xlsx?|pptx?)$/i.test(name)))||
+        (activeFilter==="images"&&mime.startsWith("image/"))||
+        (activeFilter==="audio"&&(mime.startsWith("audio/")||mime.startsWith("video/")))||
+        (activeFilter==="archives"&&(mime.includes("zip")||/\.(zip|rar|7z|tar|gz)$/i.test(name)));
+      return queryMatch&&filterMatch;
+    }).sort((a,b)=>Number(b.directory)-Number(a.directory)||a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
+    if(!items.length){const empty=document.createElement("li");empty.className="empty-files";empty.textContent=allItems.length?"No hay coincidencias para este filtro.":"Esta carpeta está vacía.";fileList.append(empty);status.textContent=allItems.length?"No se encontraron coincidencias.":"Carpeta leída correctamente: no contiene elementos.";return;}
     for(const item of items){
-      const li=document.createElement("li");li.className="file-row";
-      const icon=document.createElement("span");icon.className="file-kind";icon.textContent=item.directory?"▰":"▤";icon.setAttribute("aria-hidden","true");
+      const li=document.createElement("li");li.className="file-row file-row-openable";li.tabIndex=0;li.setAttribute("role","button");
+      const icon=document.createElement("span");icon.className="file-kind";icon.textContent=item.directory?"▰":(item.mimeType||"").startsWith("image/")?"▧":(item.mimeType||"").startsWith("audio/")?"♫":"▤";icon.setAttribute("aria-hidden","true");
       const details=document.createElement("span");details.className="file-details";
       const name=document.createElement("span");name.className="file-name";name.textContent=item.name;
-      const meta=document.createElement("small");meta.textContent=item.directory?"Carpeta":(item.mimeType||"Archivo")+(Number.isFinite(item.size)? " · "+formatSize(item.size):"");
-      details.append(name,meta);li.append(icon,details);fileList.append(li);
+      const meta=document.createElement("small");meta.textContent=item.directory?"Carpeta":(item.mimeType||"Archivo")+(Number.isFinite(item.size)?" · "+formatSize(item.size):"");
+      details.append(name,meta);li.append(icon,details);
+      const open=()=>{try{if(item.directory)renderFiles(JSON.parse(window.WFileNative.openDirectory(item.id)));else if(!window.WFileNative.openFile(item.id))status.textContent="No hay una aplicación disponible para abrir este archivo.";}catch(_){status.textContent="No se pudo abrir el elemento.";}}
+      li.addEventListener("click",open);li.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();open();}});
+      fileList.append(li);
     }
-    status.textContent="Se encontraron "+items.length+" elementos en la carpeta seleccionada.";
+    status.textContent="Se muestran "+items.length+" de "+allItems.length+" elementos.";
   }
+  searchInput.addEventListener("input",drawFilteredFiles);
+  document.querySelectorAll("[data-filter]").forEach(button=>button.addEventListener("click",()=>{activeFilter=button.dataset.filter;document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));drawFilteredFiles();}));
+  document.getElementById("go-up").addEventListener("click",()=>{try{renderFiles(JSON.parse(window.WFileNative.goToRoot()));}catch(_){status.textContent="No se pudo volver a la carpeta inicial.";}});
   function formatSize(bytes){if(bytes<1024)return bytes+" B";const units=["KB","MB","GB","TB"];let value=bytes/1024,index=0;while(value>=1024&&index<units.length-1){value/=1024;index++;}return value.toFixed(value>=10?0:1)+" "+units[index];}
   function refreshFiles(){
     if(!window.WFileNative||typeof window.WFileNative.listFiles!=="function"){status.textContent="La lectura de archivos requiere ejecutar la aplicación Android.";return;}

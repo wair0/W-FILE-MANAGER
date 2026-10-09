@@ -43,7 +43,12 @@
       <button class="category" data-view="audio"><span class="category-icon" aria-hidden="true">♫</span><span>Audio</span><small>Música y sonidos</small></button>
       <button class="category" data-view="archives"><span class="category-icon" aria-hidden="true">▣</span><span>Archivos ZIP</span><small>Comprimidos</small></button>
     </section>
-    <section class="file-panel" id="file-panel" aria-labelledby="files-title" hidden><div class="section-heading"><p class="eyebrow">CARPETA SELECCIONADA</p><h2 id="files-title">Contenido real</h2></div><ul id="file-list" class="file-list" aria-live="polite"></ul></section>
+    <section class="file-panel" id="file-panel" aria-labelledby="files-title" hidden>
+      <div class="section-heading"><p class="eyebrow">CARPETA SELECCIONADA</p><h2 id="files-title">Contenido real</h2><p id="current-path" class="muted">Carpeta inicial</p></div>
+      <div class="file-tools"><button id="go-up" class="tool-button" disabled>Volver al inicio</button><input id="file-search" type="search" placeholder="Buscar en esta carpeta…" aria-label="Buscar archivos por nombre"></div>
+      <div class="filter-row" aria-label="Filtrar por categoría"><button data-filter="all" aria-pressed="true">Todos</button><button data-filter="documents" aria-pressed="false">Documentos</button><button data-filter="images" aria-pressed="false">Imágenes</button><button data-filter="audio" aria-pressed="false">Audio/vídeo</button><button data-filter="archives" aria-pressed="false">ZIP</button></div>
+      <ul id="file-list" class="file-list" aria-live="polite"></ul>
+    </section>
     <section class="notice" role="status" aria-live="polite"><span class="notice-icon" aria-hidden="true">i</span><p id="native-status">Interfaz lista. Seleccioná una carpeta para ver sus archivos.</p></section>
   </main>
   <nav class="bottom-nav" aria-label="Navegación principal">
