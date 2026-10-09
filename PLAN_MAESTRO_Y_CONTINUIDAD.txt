@@ -48,7 +48,7 @@ Objetivo:
 Criterio de salida:
 - ./gradlew assembleDebug compila con JDK/SDK adecuados.
 - App abre la UI local; navegación externa no puede acceder al puente; no hay errores de recursos.
-Estado: EN PROGRESO. Se añadió workflow de GitHub Actions para compilar y publicar el APK debug como artifact. La compilación aún debe verificarse en una ejecución real.
+Estado: PARCIAL. GitHub Actions run 37979164168 terminó con éxito y publicó el APK debug; aún falta probar la app en dispositivo/emulador.
 
 FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN HTML/CSS/GLSL (1–2 commits)
 Objetivo:
@@ -133,9 +133,9 @@ Criterio de salida:
 - assembleDebug y assembleRelease ejecutados, pruebas registradas y limitaciones documentadas.
 
 REGISTRO DE AVANCE — 2026-10-09
-- Commit de implementación: listado inicial de archivos vía SAF y recuperación del permiso persistente; validación pendiente de Actions.
-- Workflow `.github/workflows/android-ci.yml`: compila `assembleDebug` con JDK 17 y Gradle 8.9 y publica el APK como artifact durante 14 días si la compilación finaliza correctamente.
-- No se afirma que el build pase hasta revisar el run de Actions.
+- Commit `850240a`: listado inicial vía SAF y workflow CI. Run `37979164168` terminó `success` y publicó APK debug artifact `11639644957`. CI exitoso no sustituye pruebas en dispositivo.
+- Implementación en curso: navegación por carpetas validando hijo directo, retorno a raíz y apertura externa mediante Intent.
+- Pendiente: ejecutar CI tras este cambio y probar en Android con proveedores SAF reales.
 
 PRÓXIMOS PASOS INMEDIATOS
 1. Obtener/añadir Gradle Wrapper y verificar compatibilidad de versiones.

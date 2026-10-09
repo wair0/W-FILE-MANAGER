@@ -18,6 +18,8 @@ import org.json.JSONObject
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     @Volatile private var selectedTreeUri: Uri? = null
+    private var currentDocumentId: String? = null
+    private val directoryStack = ArrayDeque<String>()
 
     private val folderPicker = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -33,11 +35,10 @@ class MainActivity : ComponentActivity() {
                 try {
                     contentResolver.takePersistableUriPermission(uri, persistableFlags)
                     selectedTreeUri = uri
-                    notifyWeb("onFolderAccessResult", JSONObject()
-                        .put("granted", true)
-                        .put("message", "Acceso concedido. Cargando contenido…")
-                    )
-                    notifyWeb("onDirectoryResult", JSONObject().put("items", listDirectory(uri)))
+                    currentDocumentId = DocumentsContract.getTreeDocumentId(uri)
+                    directoryStack.clear()
+                    notifyWeb("onFolderAccessResult", JSONObject().put("granted", true).put("message", "Acceso concedido. Cargando contenido…"))
+                    runCatching { directoryPayload() }.onSuccess { notifyWeb("onDirectoryResult", it) }.onFailure { notifyWeb("onDirectoryResult", JSONObject().put("error", "No se pudo leer esta carpeta.").put("items", JSONArray())) }
                 } catch (_: SecurityException) {
                     notifyWeb("onFolderAccessResult", JSONObject()
                         .put("granted", false)
@@ -95,16 +96,18 @@ class MainActivity : ComponentActivity() {
         setContentView(webView)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (::webView.isInitialized && webView.canGoBack()) webView.goBack() else finish()
+                if (directoryStack.isNotEmpty()) {
+                    directoryStack.removeLast()
+                    currentDocumentId = directoryStack.lastOrNull() ?: selectedTreeUri?.let { DocumentsContract.getTreeDocumentId(it) }
+                    runCatching { directoryPayload() }.onSuccess { notifyWeb("onDirectoryResult", it) }
+                } else if (::webView.isInitialized && webView.canGoBack()) webView.goBack() else finish()
             }
         })
     }
 
-    private fun listDirectory(treeUri: Uri): JSONArray {
+    private fun listDirectory(treeUri: Uri, documentId: String): JSONArray {
         val result = JSONArray()
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-            treeUri, DocumentsContract.getTreeDocumentId(treeUri)
-        )
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
         val projection = arrayOf(
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,
@@ -131,6 +134,12 @@ class MainActivity : ComponentActivity() {
             }
         }
         return result
+    }
+
+    private fun directoryPayload(): JSONObject {
+        val tree = selectedTreeUri ?: return JSONObject().put("error", "Seleccioná una carpeta primero.").put("items", JSONArray())
+        val id = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+        return JSONObject().put("items", listDirectory(tree, id)).put("pathDepth", directoryStack.size).put("canGoUp", directoryStack.isNotEmpty())
     }
 
     private fun notifyWeb(callback: String, payload: JSONObject) {
@@ -174,10 +183,9 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun listFiles(): String {
-            val uri = selectedTreeUri ?: return JSONObject()
-                .put("error", "Seleccioná una carpeta primero.").put("items", JSONArray()).toString()
+            selectedTreeUri ?: return JSONObject().put("error", "Seleccioná una carpeta primero.").put("items", JSONArray()).toString()
             return try {
-                JSONObject().put("items", listDirectory(uri)).toString()
+                directoryPayload().toString()
             } catch (_: SecurityException) {
                 selectedTreeUri = null
                 JSONObject().put("error", "El permiso de la carpeta fue revocado.")
@@ -187,5 +195,60 @@ class MainActivity : ComponentActivity() {
                     .put("items", JSONArray()).toString()
             }
         }
+        @JavascriptInterface
+        fun openDirectory(documentId: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("error", "Seleccioná una carpeta primero.").put("items", JSONArray()).toString()
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val directChild = listDirectory(tree, parentId).let { items ->
+                    (0 until items.length()).any { index ->
+                        val item = items.getJSONObject(index)
+                        item.optString("id") == documentId && item.optBoolean("directory")
+                    }
+                }
+                if (documentId.isBlank() || !directChild) JSONObject().put("error", "La carpeta ya no está disponible.").put("items", JSONArray()).toString()
+                else {
+                    directoryStack.addLast(parentId)
+                    currentDocumentId = documentId
+                    directoryPayload().toString()
+                }
+            } catch (_: SecurityException) {
+                selectedTreeUri = null
+                currentDocumentId = null
+                directoryStack.clear()
+                JSONObject().put("error", "El permiso de la carpeta fue revocado.").put("items", JSONArray()).toString()
+            } catch (_: Exception) {
+                JSONObject().put("error", "No se pudo abrir esta carpeta.").put("items", JSONArray()).toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun goToRoot(): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("error", "Seleccioná una carpeta primero.").put("items", JSONArray()).toString()
+            return try {
+                directoryStack.clear()
+                currentDocumentId = DocumentsContract.getTreeDocumentId(tree)
+                directoryPayload().toString()
+            } catch (_: Exception) {
+                JSONObject().put("error", "No se pudo volver a la carpeta inicial.").put("items", JSONArray()).toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun openFile(documentId: String): Boolean {
+            val tree = selectedTreeUri ?: return false
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val item = listDirectory(tree, parentId).let { items ->
+                    (0 until items.length()).map { items.getJSONObject(it) }.firstOrNull {
+                        it.optString("id") == documentId && !it.optBoolean("directory")
+                    }
+                } ?: return false
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, item.getString("id"))
+                startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, item.optString("mimeType", "*/*")).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                true
+            } catch (_: Exception) { false }
+        }
+
     }
 }
