@@ -2,6 +2,7 @@ package com.w.files
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
@@ -20,6 +21,7 @@ class MainActivity : ComponentActivity() {
     @Volatile private var selectedTreeUri: Uri? = null
     private var currentDocumentId: String? = null
     private val directoryStack = ArrayDeque<String>()
+    private val favoritePrefs: SharedPreferences by lazy { getSharedPreferences("wfm_favorites", MODE_PRIVATE) }
 
     private val folderPicker = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -246,6 +248,71 @@ class MainActivity : ComponentActivity() {
             } catch (_: Exception) {
                 JSONObject().put("error", "No se pudo volver a la carpeta anterior.").put("items", JSONArray()).toString()
             }
+        }
+
+
+        @JavascriptInterface
+        fun listFavorites(): String {
+            val saved = JSONArray(favoritePrefs.getString("items", "[]") ?: "[]")
+            val items = JSONArray()
+            for (i in 0 until saved.length()) {
+                val item = saved.getJSONObject(i)
+                items.put(JSONObject().put("id", item.optString("id"))
+                    .put("name", item.optString("name"))
+                    .put("mimeType", item.optString("mimeType", "application/octet-stream"))
+                    .put("size", item.opt("size") ?: JSONObject.NULL)
+                    .put("directory", false).put("favorite", true)
+                    .put("treeUri", item.optString("treeUri")))
+            }
+            return JSONObject().put("items", items).put("favorites", true).toString()
+        }
+
+        @JavascriptInterface
+        fun toggleFavorite(documentId: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val found = listDirectory(tree, parentId).let { items ->
+                    (0 until items.length()).map { items.getJSONObject(it) }
+                        .firstOrNull { it.optString("id") == documentId && !it.optBoolean("directory") }
+                } ?: return JSONObject().put("ok", false).put("message", "Solo se pueden destacar archivos.").toString()
+                val saved = JSONArray(favoritePrefs.getString("items", "[]") ?: "[]")
+                val updated = JSONArray()
+                var removed = false
+                for (i in 0 until saved.length()) {
+                    val item = saved.getJSONObject(i)
+                    if (item.optString("treeUri") == tree.toString() && item.optString("id") == documentId) {
+                        removed = true
+                    } else updated.put(item)
+                }
+                if (!removed) updated.put(JSONObject()
+                    .put("id", documentId).put("name", found.optString("name"))
+                    .put("mimeType", found.optString("mimeType", "application/octet-stream"))
+                    .put("size", found.opt("size") ?: JSONObject.NULL).put("treeUri", tree.toString()))
+                favoritePrefs.edit().putString("items", updated.toString()).apply()
+                JSONObject().put("ok", true).put("favorite", !removed)
+                    .put("message", if (removed) "Se quitó de Destacados." else "Añadido a Destacados.").toString()
+            } catch (_: Exception) {
+                JSONObject().put("ok", false).put("message", "No se pudo actualizar Destacados.").toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun openFavorite(documentId: String, treeUriString: String): Boolean {
+            return try {
+                val tree = Uri.parse(treeUriString)
+                val hasPermission = contentResolver.persistedUriPermissions.any { it.uri == tree && it.isReadPermission }
+                if (!hasPermission) return false
+                val saved = JSONArray(favoritePrefs.getString("items", "[]") ?: "[]")
+                val exists = (0 until saved.length()).any {
+                    saved.getJSONObject(it).optString("id") == documentId &&
+                    saved.getJSONObject(it).optString("treeUri") == treeUriString
+                }
+                if (!exists) return false
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                true
+            } catch (_: Exception) { false }
         }
 
         @JavascriptInterface
