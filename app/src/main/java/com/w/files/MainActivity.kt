@@ -235,6 +235,20 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun goUp(): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("error", "Seleccioná una carpeta primero.").put("items", JSONArray()).toString()
+            return try {
+                if (directoryStack.isNotEmpty()) {
+                    directoryStack.removeLast()
+                    currentDocumentId = directoryStack.lastOrNull() ?: DocumentsContract.getTreeDocumentId(tree)
+                }
+                directoryPayload().toString()
+            } catch (_: Exception) {
+                JSONObject().put("error", "No se pudo volver a la carpeta anterior.").put("items", JSONArray()).toString()
+            }
+        }
+
+        @JavascriptInterface
         fun openFile(documentId: String): Boolean {
             val tree = selectedTreeUri ?: return false
             return try {

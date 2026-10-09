@@ -61,7 +61,7 @@ Objetivo:
 - GLSL solo para efectos útiles, con fallback.
 Criterio de salida:
 - Todas las vistas tienen el mismo lenguaje visual y la navegación funciona sin controles muertos.
-Estado: EN PROGRESO. Portada, navegación y tema; el explorador ahora incorpora búsqueda local, filtros de categorías basados en MIME/extensión, teclado y apertura de carpetas/archivos. Aún faltan controles de ordenación/lista-cuadrícula y icono final.
+Estado: EN PROGRESO. Portada, navegación y tema; el explorador ahora incorpora búsqueda local, filtros de categorías basados en MIME/extensión, teclado y apertura de carpetas/archivos. Aún faltan controles de ordenación/lista-cuadrícula y el icono final. Se corrigió el botón Volver para subir un nivel y las categorías aplican filtros al listado visible.
 
 FASE 3 — PERMISOS Y ACCESO A ALMACENAMIENTO (1–2 commits)
 Objetivo:
