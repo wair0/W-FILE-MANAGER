@@ -52,13 +52,20 @@
       <div class="section-heading"><p class="eyebrow">PROTECCIÓN</p><h2>Carpeta segura</h2></div>
       <div class="safe-card">
         <p class="safe-lock" aria-hidden="true">⬡</p>
-        <p class="muted">Espacio diferenciado para archivos sensibles. <strong>El cifrado real (AES-GCM) se implementa en la Fase 7.</strong> Por ahora no hay ocultamiento que sustituya al cifrado.</p>
+        <p class="muted">Cifrado <strong>AES-GCM</strong> con PBKDF2 (120 000 iteraciones). La contraseña solo vive en memoria mientras la sesión está desbloqueada. No se puede recuperar si la olvidás.</p>
+        <p class="muted" id="safe-status">Estado: bloqueada</p>
+        <label class="safe-label" for="safe-password">Contraseña (mín. 6)</label>
+        <input type="password" id="safe-password" class="safe-input" autocomplete="off" minlength="6" placeholder="Contraseña de sesión">
+        <div class="editor-actions">
+          <button type="button" class="primary-action" id="safe-unlock">Desbloquear</button>
+          <button type="button" class="tool-button" id="safe-lock">Bloquear</button>
+          <button type="button" class="tool-button" id="safe-back">Volver</button>
+        </div>
         <ul class="safe-points">
-          <li>No confundir «ocultar» con cifrar.</li>
-          <li>La contraseña y las claves no se guardarán en texto plano.</li>
-          <li>Hasta la Fase 7, usá Destacados o una carpeta normal bajo tu control.</li>
+          <li>Al cifrar se crea un archivo <code>.wfm</code>; el original se conserva.</li>
+          <li>Al descifrar se crea una copia en claro; el <code>.wfm</code> se conserva.</li>
+          <li>Contraseña incorrecta o archivo alterado: el descifrado falla (tag GCM).</li>
         </ul>
-        <button class="primary-action" id="safe-back" type="button">Volver al inicio</button>
       </div>
     </section>
     <section class="file-panel" id="file-panel" aria-labelledby="files-title" hidden>
