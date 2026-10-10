@@ -59,9 +59,27 @@
         const actions=document.createElement("span");actions.className="file-actions";
         const renameBtn=document.createElement("button");renameBtn.className="action-btn";renameBtn.type="button";renameBtn.textContent="✎";renameBtn.setAttribute("aria-label","Renombrar");
         renameBtn.addEventListener("click",e=>{e.stopPropagation();const nn=prompt("Nuevo nombre:",item.name);if(nn&&nn!==item.name){try{const r=JSON.parse(window.WFileNative.renameDocument(item.id,nn));status.textContent=r.message||"";if(r.ok)refreshFiles();}catch(_){status.textContent="Error al renombrar.";}}});
+        const copyBtn=document.createElement("button");copyBtn.className="action-btn";copyBtn.type="button";copyBtn.textContent="⎘";copyBtn.setAttribute("aria-label","Copiar aquí");
+        copyBtn.addEventListener("click",e=>{e.stopPropagation();if(confirm("¿Copiar \""+item.name+"\" en esta misma carpeta?")){try{const r=JSON.parse(window.WFileNative.copyDocument(item.id));status.textContent=r.message||"";if(r.ok)refreshFiles();}catch(_){status.textContent="Error al copiar.";}}});
+        const moveBtn=document.createElement("button");moveBtn.className="action-btn";moveBtn.type="button";moveBtn.textContent="↪";moveBtn.setAttribute("aria-label","Mover");
+        moveBtn.addEventListener("click",e=>{e.stopPropagation();
+          try{
+            const folders=JSON.parse(window.WFileNative.listSubfolders());
+            const opts=(folders.items||[]).map((f,i)=> (i+1)+") "+f.name).join("\n");
+            if(!opts){status.textContent="No hay subcarpetas en este nivel para mover.";return;}
+            const pick=prompt("Mover \""+item.name+"\" a (número):\n"+opts);
+            const n=parseInt(pick,10);
+            if(!n||n<1||n>folders.items.length){status.textContent="Movimiento cancelado.";return;}
+            const target=folders.items[n-1];
+            if(!confirm("¿Mover a \""+target.name+"\"?"))return;
+            const r=JSON.parse(window.WFileNative.moveDocument(item.id,target.id));
+            status.textContent=r.message||"";
+            if(r.ok)refreshFiles();
+          }catch(_){status.textContent="Error al mover.";}
+        });
         const delBtn=document.createElement("button");delBtn.className="action-btn danger";delBtn.type="button";delBtn.textContent="✕";delBtn.setAttribute("aria-label","Eliminar");
         delBtn.addEventListener("click",e=>{e.stopPropagation();if(confirm("¿Eliminar \""+item.name+"\" de forma permanente?")){try{const r=JSON.parse(window.WFileNative.deleteDocument(item.id));status.textContent=r.message||"";if(r.ok)refreshFiles();}catch(_){status.textContent="Error al eliminar.";}}});
-        actions.append(renameBtn,delBtn);li.append(actions);
+        actions.append(renameBtn,copyBtn,moveBtn,delBtn);li.append(actions);
       }
       if(!item.directory&&!item.favorite&&window.WFileNative&&typeof window.WFileNative.toggleFavorite==="function"){const star=document.createElement("button");star.className="favorite-toggle";star.type="button";star.textContent="☆";star.setAttribute("aria-label","Añadir a Destacados");star.addEventListener("click",event=>{event.stopPropagation();try{const result=JSON.parse(window.WFileNative.toggleFavorite(item.id));status.textContent=result.message||"Destacados actualizado.";star.textContent=result.favorite?"★":"☆";}catch(_){status.textContent="No se pudo actualizar Destacados.";}});li.append(star);}
       fileList.append(li);
