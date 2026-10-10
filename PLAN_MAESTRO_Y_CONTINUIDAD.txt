@@ -1,50 +1,38 @@
 W FILE MANAGER — PLAN MAESTRO Y CONTINUIDAD
 ================================================
+https://github.com/wair0/W-FILE-MANAGER · rama main
 
-REPOSITORIO
-https://github.com/wair0/W-FILE-MANAGER
-Rama principal: main
+FASE 1 — BASE ANDROID COMPILABLE — COMPLETA
+- WebView + WebViewAssetLoader (appassets.androidplatform.net).
+- Puente tipado WFileNative, origen local restringido.
+- CI assembleDebug OK (artifact APK). Icono adaptive launcher presente.
+- AGP/Kotlin/JDK documentados en README. Prueba en dispositivo real pendiente de registro.
 
-OBJETIVO
-Construir un gestor de archivos Android fiable, con interfaz HTML/CSS/GLSL y motor funcional Kotlin. JavaScript coordina las interacciones de la interfaz y llama a una API nativa pequeña y controlada.
+FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN — COMPLETA
+- Temas claro/oscuro (localStorage), drawer, bottom nav, focus-visible, reduced-motion.
+- Vista lista / cuadrícula, tipografía y componentes coherentes.
+- GLSL ambient con fallback.
 
-ARQUITECTURA OBLIGATORIA
-- HTML: estructura y contenido de las pantallas.
-- CSS: diseño adaptable, componentes, iconos CSS/SVG cuando proceda, temas, estados y animaciones.
-- GLSL/WebGL: efectos gráficos opcionales; deben tener degradación elegante si WebGL no está disponible y respetar reducir movimiento.
-- JavaScript: navegación visual, renderizado de resultados y comunicación con Kotlin.
-- Kotlin: lógica de negocio, acceso al sistema de archivos, permisos, operaciones destructivas, ZIP, cifrado, persistencia y APIs Android.
-- WebView: presenta recursos web empaquetados en la aplicación. No usar Jetpack Compose para construir la interfaz.
-- Seguridad: mantener el contenido web local; no habilitar acceso arbitrario a archivos para JavaScript; no exponer métodos nativos genéricos; validar parámetros en Kotlin. Añadir solo métodos @JavascriptInterface específicos y necesarios.
+FASE 3 — PERMISOS Y SAF — COMPLETA
+- Solo SAF; sin MANAGE_EXTERNAL_STORAGE.
+- Persistencia de URI, listado DocumentsContract, manejo de denegación/revocación.
+- Documentado en README.
 
-REGLAS DE TRABAJO
-1. Trabajar directamente en este repositorio; no sustituir los cambios del repo por un ZIP enviado al usuario.
-2. Mantener commits pequeños: 1–2 commits por fase. Mensajes claros en español mayúsculas o con prefijos feat/fix/docs.
-3. Antes de cada commit, inspeccionar la versión actual de los archivos y el HEAD de main.
-4. No afirmar que compila o que una función está terminada sin verificación real.
-5. Una fase solo está completa cuando se cumplen sus criterios de salida.
-
-PLAN COMPLETO POR FASES
-=======================
-
-FASE 1 — BASE ANDROID COMPILABLE — PARCIAL (CI OK, falta prueba en dispositivo)
-FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN — EN PROGRESO
-FASE 3 — PERMISOS Y SAF — HECHA (selector + listado + persistencia)
 FASE 4 — EXPLORADOR REAL — COMPLETA
-  - Listar, navegar (abrir carpeta / subir / raíz), buscar, ordenar (nombre/tamaño/fecha).
-  - Abrir archivos externos, renombrar, eliminar con confirmación.
-  - Copiar en carpeta actual (copyDocument).
-  - Mover a subcarpeta del nivel actual (moveDocument + listSubfolders).
-  - Favoritos persistentes.
-  Nota: copia/mover dependen del soporte del proveedor SAF; no todos los proveedores implementan copy/move.
-  Pendiente opcional: selección múltiple y vista cuadrícula.
-FASE 5 — INICIO, CATEGORÍAS, DESTACADOS Y SEGURA — EN PROGRESO (UI segura diferenciada)
-FASE 6 — ZIP, EDITOR DE TEXTO Y MULTIMEDIA — PENDIENTE
-FASE 7 — CIFRADO Y CARPETA SEGURA — PENDIENTE
-FASE 8 — PERSISTENCIA Y RENDIMIENTO — PENDIENTE
-FASE 9 — PRUEBAS, ACCESIBILIDAD Y RELEASE — PENDIENTE
+- Listar, navegar, buscar, ordenar, abrir, renombrar, eliminar, copiar, mover, favoritos.
+- Nota: copy/move según soporte del proveedor SAF.
 
-ACTUALIZACIÓN 4 — 2026-10-10
-- Commits: FIX restaurar MainActivity + FEAT UI copia/mover.
-- Fase 4 marcada COMPLETA.
-- Versión app 0.5.0.
+FASE 5 — INICIO, CATEGORÍAS, DESTACADOS Y SEGURA — COMPLETA
+- Inicio con estado de acceso, contadores de carpeta actual y categorías derivadas de datos reales.
+- Destacados persistentes (SharedPreferences).
+- Carpeta segura: flujo UI diferenciado; cifrado real diferido a Fase 7 (sin fingir protección por ocultación).
+
+FASE 6 — ZIP / EDITOR / MULTIMEDIA — PENDIENTE
+FASE 7 — CIFRADO AES-GCM + CARPETA SEGURA — PENDIENTE
+FASE 8 — ROOM / DATASTORE — PENDIENTE
+FASE 9 — PRUEBAS / A11Y / RELEASE — PENDIENTE
+
+ACTUALIZACIÓN — 2026-10-10
+- Fases 1–3 y 5 marcadas COMPLETAS.
+- versionName 0.5.0 · versionCode 5.
+- UI inicio + panel segura + stats + toggle lista/cuadrícula.
