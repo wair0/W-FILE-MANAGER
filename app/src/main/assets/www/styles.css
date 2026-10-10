@@ -29,3 +29,7 @@ body.light .primary-action{background:#e4edff;border-color:#b6ccf4}
 .file-list.grid .file-actions{margin-left:0;margin-top:8px}
 body.light .safe-card{background:linear-gradient(145deg,#fff8e8,#fff);border-color:#e8d4a8}
 #access-dot.on{background:#3ddc84;box-shadow:0 0 12px #3ddc84}
+
+.editor-panel{margin-top:20px}
+.editor-panel textarea{width:100%;min-height:220px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.editor-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
