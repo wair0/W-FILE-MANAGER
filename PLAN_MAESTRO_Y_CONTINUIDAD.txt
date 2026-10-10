@@ -155,3 +155,10 @@ Los comandos son objetivos de validación, no afirmación de que ya se hayan eje
 
 ACTUALIZACIÓN DE ESTE DOCUMENTO
 Cada vez que cambie el plan o se cierre una fase, actualizar este archivo en un commit. Registrar fecha, SHA de commit, cambios, pruebas ejecutadas, resultado y pendientes. Mantener los estados: PENDIENTE, EN PROGRESO, BLOQUEADA o COMPLETA.
+
+ACTUALIZACIÓN — 2026-10-10
+- Fase 4 avanzando: se añaden ordenación (nombre/tamaño/fecha), renombrado y eliminación con confirmación mediante DocumentsContract.
+- Métodos nativos renameDocument y deleteDocument expuestos de forma controlada.
+- UI actualizada con selector de orden y botones de acción por elemento.
+- Pendiente: copia/mover, selección múltiple y validación en dispositivo.
+Estado Fase 4: EN PROGRESO.

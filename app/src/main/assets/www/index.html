@@ -45,7 +45,7 @@
     </section>
     <section class="file-panel" id="file-panel" aria-labelledby="files-title" hidden>
       <div class="section-heading"><p class="eyebrow">CARPETA SELECCIONADA</p><h2 id="files-title">Contenido real</h2><p id="current-path" class="muted">Carpeta inicial</p></div>
-      <div class="file-tools"><button id="go-up" class="tool-button" disabled>Volver al inicio</button><input id="file-search" type="search" placeholder="Buscar en esta carpeta…" aria-label="Buscar archivos por nombre"></div>
+      <div class="file-tools"><button id="go-up" class="tool-button" disabled>Volver al inicio</button><input id="file-search" type="search" placeholder="Buscar en esta carpeta…" aria-label="Buscar archivos por nombre"><select id="sort-select" aria-label="Ordenar por"><option value="name">Nombre</option><option value="size">Tamaño</option><option value="modified">Fecha</option></select></div>
       <div class="filter-row" aria-label="Filtrar por categoría"><button data-filter="all" aria-pressed="true">Todos</button><button data-filter="documents" aria-pressed="false">Documentos</button><button data-filter="images" aria-pressed="false">Imágenes</button><button data-filter="audio" aria-pressed="false">Audio/vídeo</button><button data-filter="archives" aria-pressed="false">ZIP</button></div>
       <ul id="file-list" class="file-list" aria-live="polite"></ul>
     </section>
@@ -54,7 +54,7 @@
   <nav class="bottom-nav" aria-label="Navegación principal">
     <button class="nav-item active" data-view="home" aria-current="page"><span aria-hidden="true">⌂</span><small>Inicio</small></button>
     <button class="nav-item" data-view="internal"><span aria-hidden="true">▤</span><small>Interno</small></button>
-    <button class="nav-item" data-view="sd"><span aria-hidden="true">▰</span><small>SD</small></button>
+    <button class="nav-item" data-view="sd"><span aria-hidden="true">▱</span><small>SD</small></button>
     <button class="nav-item" data-view="favorites"><span aria-hidden="true">☆</span><small>Destacados</small></button>
     <button class="nav-item" data-view="safe"><span aria-hidden="true">⬡</span><small>Segura</small></button>
   </nav>

@@ -165,7 +165,7 @@ class MainActivity : ComponentActivity() {
     inner class UiBridge {
         @JavascriptInterface
         fun getAppInfo(): String = JSONObject()
-            .put("name", "W FILE MANAGER").put("version", "0.2.0").put("status", "ready").toString()
+            .put("name", "W FILE MANAGER").put("version", "0.3.0").put("status", "ready").toString()
 
         @JavascriptInterface
         fun requestFolderAccess() {
@@ -250,6 +250,40 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        @JavascriptInterface
+        fun renameDocument(documentId: String, newName: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            if (newName.isBlank() || newName.contains("/") || newName.contains("\\")) {
+                return JSONObject().put("ok", false).put("message", "Nombre no válido.").toString()
+            }
+            return try {
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                val result = DocumentsContract.renameDocument(contentResolver, uri, newName)
+                if (result != null) {
+                    JSONObject().put("ok", true).put("message", "Renombrado correctamente.").toString()
+                } else {
+                    JSONObject().put("ok", false).put("message", "No se pudo renombrar.").toString()
+                }
+            } catch (_: Exception) {
+                JSONObject().put("ok", false).put("message", "Error al renombrar el elemento.").toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun deleteDocument(documentId: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            return try {
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                val deleted = DocumentsContract.deleteDocument(contentResolver, uri)
+                if (deleted) {
+                    JSONObject().put("ok", true).put("message", "Elemento eliminado.").toString()
+                } else {
+                    JSONObject().put("ok", false).put("message", "No se pudo eliminar.").toString()
+                }
+            } catch (_: Exception) {
+                JSONObject().put("ok", false).put("message", "Error al eliminar el elemento.").toString()
+            }
+        }
 
         @JavascriptInterface
         fun listFavorites(): String {

@@ -12,8 +12,10 @@
   const filePanel=document.getElementById("file-panel");
   const searchInput=document.getElementById("file-search");
   const pathLabel=document.getElementById("current-path");
+  const sortSelect=document.getElementById("sort-select");
   let allItems=[];
   let activeFilter="all";
+  let sortKey="name";
   function renderFiles(payload){
     filePanel.hidden=false;fileList.replaceChildren();
     if(payload.error){status.textContent=payload.error;return;}
@@ -22,10 +24,18 @@
     document.getElementById("go-up").disabled=!payload.canGoUp;
     drawFilteredFiles();
   }
+  function sortItems(items){
+    return items.slice().sort((a,b)=>{
+      if(a.directory!==b.directory) return Number(b.directory)-Number(a.directory);
+      if(sortKey==="size") return (b.size||0)-(a.size||0);
+      if(sortKey==="modified") return (b.modified||0)-(a.modified||0);
+      return a.name.localeCompare(b.name,undefined,{sensitivity:"base"});
+    });
+  }
   function drawFilteredFiles(){
     fileList.replaceChildren();
     const query=(searchInput.value||"").trim().toLocaleLowerCase();
-    const items=allItems.filter(item=>{
+    const items=sortItems(allItems.filter(item=>{
       const mime=(item.mimeType||"").toLowerCase(),name=(item.name||"").toLowerCase();
       const queryMatch=name.includes(query);
       const filterMatch=activeFilter==="all"||
@@ -34,23 +44,32 @@
         (activeFilter==="audio"&&(mime.startsWith("audio/")||mime.startsWith("video/")))||
         (activeFilter==="archives"&&(mime.includes("zip")||/\.(zip|rar|7z|tar|gz)$/i.test(name)));
       return queryMatch&&filterMatch;
-    }).sort((a,b)=>Number(b.directory)-Number(a.directory)||a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
+    }));
     if(!items.length){const empty=document.createElement("li");empty.className="empty-files";empty.textContent=allItems.length?"No hay coincidencias para este filtro.":"Esta carpeta está vacía.";fileList.append(empty);status.textContent=allItems.length?"No se encontraron coincidencias.":"Carpeta leída correctamente: no contiene elementos.";return;}
     for(const item of items){
       const li=document.createElement("li");li.className="file-row file-row-openable";li.tabIndex=0;li.setAttribute("role","button");
-      const icon=document.createElement("span");icon.className="file-kind";icon.textContent=item.directory?"▰":(item.mimeType||"").startsWith("image/")?"▧":(item.mimeType||"").startsWith("audio/")?"♫":"▤";icon.setAttribute("aria-hidden","true");
+      const icon=document.createElement("span");icon.className="file-kind";icon.textContent=item.directory?"▱":(item.mimeType||"").startsWith("image/")?"▧":(item.mimeType||"").startsWith("audio/")?"♫":"▤";icon.setAttribute("aria-hidden","true");
       const details=document.createElement("span");details.className="file-details";
       const name=document.createElement("span");name.className="file-name";name.textContent=item.name;
       const meta=document.createElement("small");meta.textContent=item.directory?"Carpeta":(item.mimeType||"Archivo")+(Number.isFinite(item.size)?" · "+formatSize(item.size):"");
       details.append(name,meta);li.append(icon,details);
-      const open=()=>{try{if(item.favorite){if(!window.WFileNative.openFavorite(item.id,item.treeUri))status.textContent="No se pudo abrir el destacado; revisá el permiso de la carpeta.";}else if(item.directory)renderFiles(JSON.parse(window.WFileNative.openDirectory(item.id)));else if(!window.WFileNative.openFile(item.id))status.textContent="No hay una aplicación disponible para abrir este archivo.";}catch(_){status.textContent="No se pudo abrir el elemento.";}}
+      const open=()=>{try{if(item.favorite){if(!window.WFileNative.openFavorite(item.id,item.treeUri))status.textContent="No se pudo abrir el destacado; revisá el permiso de la carpeta.";}else if(item.directory)renderFiles(JSON.parse(window.WFileNative.openDirectory(item.id)));else if(!window.WFileNative.openFile(item.id))status.textContent="No hay una aplicación disponible para abrir este archivo.";}catch(_){status.textContent="No se pudo abrir el elemento.";}};
       li.addEventListener("click",open);li.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();open();}});
+      if(!item.favorite){
+        const actions=document.createElement("span");actions.className="file-actions";
+        const renameBtn=document.createElement("button");renameBtn.className="action-btn";renameBtn.type="button";renameBtn.textContent="✎";renameBtn.setAttribute("aria-label","Renombrar");
+        renameBtn.addEventListener("click",e=>{e.stopPropagation();const nn=prompt("Nuevo nombre:",item.name);if(nn&&nn!==item.name){try{const r=JSON.parse(window.WFileNative.renameDocument(item.id,nn));status.textContent=r.message||"";if(r.ok)refreshFiles();}catch(_){status.textContent="Error al renombrar.";}}});
+        const delBtn=document.createElement("button");delBtn.className="action-btn danger";delBtn.type="button";delBtn.textContent="✕";delBtn.setAttribute("aria-label","Eliminar");
+        delBtn.addEventListener("click",e=>{e.stopPropagation();if(confirm("¿Eliminar \""+item.name+"\" de forma permanente?")){try{const r=JSON.parse(window.WFileNative.deleteDocument(item.id));status.textContent=r.message||"";if(r.ok)refreshFiles();}catch(_){status.textContent="Error al eliminar.";}}});
+        actions.append(renameBtn,delBtn);li.append(actions);
+      }
       if(!item.directory&&!item.favorite&&window.WFileNative&&typeof window.WFileNative.toggleFavorite==="function"){const star=document.createElement("button");star.className="favorite-toggle";star.type="button";star.textContent="☆";star.setAttribute("aria-label","Añadir a Destacados");star.addEventListener("click",event=>{event.stopPropagation();try{const result=JSON.parse(window.WFileNative.toggleFavorite(item.id));status.textContent=result.message||"Destacados actualizado.";star.textContent=result.favorite?"★":"☆";}catch(_){status.textContent="No se pudo actualizar Destacados.";}});li.append(star);}
       fileList.append(li);
     }
     status.textContent="Se muestran "+items.length+" de "+allItems.length+" elementos.";
   }
   searchInput.addEventListener("input",drawFilteredFiles);
+  if(sortSelect) sortSelect.addEventListener("change",()=>{sortKey=sortSelect.value;drawFilteredFiles();});
   document.querySelectorAll("[data-filter]").forEach(button=>button.addEventListener("click",()=>{activeFilter=button.dataset.filter;document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));drawFilteredFiles();}));
   document.getElementById("go-up").addEventListener("click",()=>{try{renderFiles(JSON.parse(window.WFileNative.goUp()));}catch(_){status.textContent="No se pudo volver a la carpeta anterior.";}});
   function formatSize(bytes){if(bytes<1024)return bytes+" B";const units=["KB","MB","GB","TB"];let value=bytes/1024,index=0;while(value>=1024&&index<units.length-1){value/=1024;index++;}return value.toFixed(value>=10?0:1)+" "+units[index];}
