@@ -16,10 +16,12 @@
   let allItems=[];
   let activeFilter="all";
   let sortKey="name";
+  let viewMode="list";
   function renderFiles(payload){
     filePanel.hidden=false;fileList.replaceChildren();
     if(payload.error){status.textContent=payload.error;return;}
     allItems=Array.isArray(payload.items)?payload.items:[];
+    updateHomeStats(allItems);
     pathLabel.textContent=payload.pathDepth?"Subcarpeta · "+payload.pathDepth+" nivel(es)":"Carpeta inicial";
     document.getElementById("go-up").disabled=!payload.canGoUp;
     drawFilteredFiles();
@@ -34,6 +36,7 @@
   }
   function drawFilteredFiles(){
     fileList.replaceChildren();
+    fileList.classList.toggle("grid", viewMode==="grid");
     const query=(searchInput.value||"").trim().toLocaleLowerCase();
     const items=sortItems(allItems.filter(item=>{
       const mime=(item.mimeType||"").toLowerCase(),name=(item.name||"").toLowerCase();
@@ -88,8 +91,33 @@
   }
   searchInput.addEventListener("input",drawFilteredFiles);
   if(sortSelect) sortSelect.addEventListener("change",()=>{sortKey=sortSelect.value;drawFilteredFiles();});
+  const viewToggle=document.getElementById("view-toggle");
+  if(viewToggle) viewToggle.addEventListener("click",()=>{viewMode=viewMode==="list"?"grid":"list";viewToggle.textContent=viewMode==="grid"?"Cuadrícula":"Lista";drawFilteredFiles();});
   document.querySelectorAll("[data-filter]").forEach(button=>button.addEventListener("click",()=>{activeFilter=button.dataset.filter;document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));drawFilteredFiles();}));
   document.getElementById("go-up").addEventListener("click",()=>{try{renderFiles(JSON.parse(window.WFileNative.goUp()));}catch(_){status.textContent="No se pudo volver a la carpeta anterior.";}});
+  function updateHomeStats(items){
+    const list=Array.isArray(items)?items:[];
+    const dirs=list.filter(i=>i.directory).length;
+    const files=list.length-dirs;
+    const row=document.getElementById("stat-row");
+    if(row){row.hidden=!list.length;document.getElementById("stat-total").textContent=String(list.length);document.getElementById("stat-dirs").textContent=String(dirs);document.getElementById("stat-files").textContent=String(files);}
+    const counts={documents:0,images:0,audio:0,archives:0};
+    for(const item of list){
+      if(item.directory) continue;
+      const mime=(item.mimeType||"").toLowerCase(),name=(item.name||"").toLowerCase();
+      if(mime.includes("pdf")||mime.startsWith("text/")||/\.(docx?|xlsx?|pptx?)$/i.test(name)) counts.documents++;
+      else if(mime.startsWith("image/")) counts.images++;
+      else if(mime.startsWith("audio/")||mime.startsWith("video/")) counts.audio++;
+      else if(mime.includes("zip")||/\.(zip|rar|7z|tar|gz)$/i.test(name)) counts.archives++;
+    }
+    const set=(id,n,fallback)=>{const el=document.getElementById(id);if(el)el.textContent=list.length? (n+" en carpeta"):fallback;};
+    set("count-documents",counts.documents,"PDF, TXT y más");
+    set("count-images",counts.images,"Fotos y gráficos");
+    set("count-audio",counts.audio,"Música y clips");
+    set("count-archives",counts.archives,"Comprimidos");
+    const dot=document.getElementById("access-dot"),pill=document.getElementById("access-pill");
+    if(dot&&pill){if(list.length|| (window.WFileNative&&window.WFileNative.hasFolderAccess&&window.WFileNative.hasFolderAccess())){dot.classList.add("on");pill.textContent="CONECTADO";} }
+  }
   function formatSize(bytes){if(bytes<1024)return bytes+" B";const units=["KB","MB","GB","TB"];let value=bytes/1024,index=0;while(value>=1024&&index<units.length-1){value/=1024;index++;}return value.toFixed(value>=10?0:1)+" "+units[index];}
   function refreshFiles(){
     if(!window.WFileNative||typeof window.WFileNative.listFiles!=="function"){status.textContent="La lectura de archivos requiere ejecutar la aplicación Android.";return;}
@@ -99,7 +127,16 @@
   window.onFolderAccessResult=result=>{status.textContent=result.message||(result.granted?"Acceso concedido.":"No se concedió acceso.");if(result.granted){document.getElementById("storage-note").textContent="Acceso autorizado mediante el selector seguro de Android.";refreshFiles();}};
   window.onDirectoryResult=renderFiles;
   document.getElementById("more-button").addEventListener("click",refreshFiles);
-  document.querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{const view=button.dataset.view;closeDrawer();document.querySelectorAll(".nav-item").forEach(item=>{const active=item.dataset.view===view;item.classList.toggle("active",active);if(active)item.setAttribute("aria-current","page");else item.removeAttribute("aria-current");});if(view==="favorites"){try{renderFiles(JSON.parse(window.WFileNative.listFavorites()));status.textContent="Tus archivos destacados guardados en este dispositivo.";}catch(_){status.textContent="Destacados requiere la aplicación Android.";}return;}if(["documents","images","audio","archives"].includes(view)){activeFilter=view;document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.filter===view)));filePanel.hidden=false;drawFilteredFiles();status.textContent="Categoría aplicada al contenido de la carpeta actual.";}else if(view==="home"){activeFilter="all";document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.filter==="all")));status.textContent="Inicio seleccionado.";filePanel.hidden=allItems.length===0;}else if(["internal","sd"].includes(view)){status.textContent="Seleccioná una carpeta desde el selector seguro de Android. La tarjeta SD aparece solo si Android la ofrece.";filePanel.hidden=true;}else if(view==="safe"){status.textContent="Carpeta segura: espacio protegido. El cifrado robusto (AES-GCM) se implementa en la Fase 7. Por ahora es un acceso diferenciado.";filePanel.hidden=true;document.getElementById("storage-note").textContent="La carpeta segura requiere cifrado real; no confíes en ocultar archivos como protección.";}else{status.textContent=(labels[view]||button.textContent.trim())+": esta función todavía no está implementada.";filePanel.hidden=true;}}));
+  const safeBack=document.getElementById("safe-back");
+  if(safeBack) safeBack.addEventListener("click",()=>{document.querySelector('[data-view="home"]').click();});
+  function showHomeChrome(show){
+    const hs=document.getElementById("home-section"), ch=document.getElementById("cat-heading"), cg=document.querySelector(".category-grid"), sp=document.getElementById("safe-panel");
+    if(hs) hs.hidden=!show;
+    if(ch) ch.hidden=!show;
+    if(cg) cg.hidden=!show;
+    if(sp) sp.hidden=true;
+  }
+  document.querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{const view=button.dataset.view;closeDrawer();document.querySelectorAll(".nav-item").forEach(item=>{const active=item.dataset.view===view;item.classList.toggle("active",active);if(active)item.setAttribute("aria-current","page");else item.removeAttribute("aria-current");});if(view==="favorites"){const sp=document.getElementById("safe-panel");if(sp)sp.hidden=true;showHomeChrome(true);try{renderFiles(JSON.parse(window.WFileNative.listFavorites()));status.textContent="Tus archivos destacados guardados en este dispositivo.";}catch(_){status.textContent="Destacados requiere la aplicación Android.";}return;}if(["documents","images","audio","archives"].includes(view)){activeFilter=view;document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.filter===view)));filePanel.hidden=false;drawFilteredFiles();status.textContent="Categoría aplicada al contenido de la carpeta actual.";}else if(view==="home"){activeFilter="all";document.querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.filter==="all")));status.textContent="Inicio seleccionado.";filePanel.hidden=allItems.length===0;showHomeChrome(true);updateHomeStats(allItems);}else if(["internal","sd"].includes(view)){status.textContent="Seleccioná una carpeta desde el selector seguro de Android. La tarjeta SD aparece solo si Android la ofrece.";filePanel.hidden=true;}else if(view==="safe"){status.textContent="Carpeta segura (flujo diferenciado). Cifrado AES-GCM en Fase 7.";filePanel.hidden=true;const sp=document.getElementById("safe-panel");if(sp)sp.hidden=false;const hs=document.getElementById("home-section"),ch=document.getElementById("cat-heading"),cg=document.querySelector(".category-grid");if(hs)hs.hidden=true;if(ch)ch.hidden=true;if(cg)cg.hidden=true;}else{status.textContent=(labels[view]||button.textContent.trim())+": esta función todavía no está implementada.";filePanel.hidden=true;}}));
   try{if(window.WFileNative){const info=JSON.parse(window.WFileNative.getAppInfo());status.textContent=info.name+" · motor nativo "+info.status;if(window.WFileNative.hasFolderAccess())refreshFiles();}}catch(_){status.textContent="Vista previa de la interfaz. Ejecuta la app Android para comprobar el puente nativo.";}
   const canvas=document.getElementById("ambient"),gl=canvas.getContext("webgl",{alpha:true,antialias:false});
   if(gl&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
