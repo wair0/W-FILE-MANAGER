@@ -15,3 +15,17 @@ body.light .primary-action{background:#e4edff;border-color:#b6ccf4}
 .action-btn{width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:14px;padding:0}
 .action-btn.danger{color:#ff6b6b;border-color:#ff6b6b55}
 .file-tools select{padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--text);font:inherit;font-size:12px}
+
+.stat-row{display:flex;gap:10px;margin-top:16px}
+.stat{flex:1;text-align:center;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.stat strong{display:block;font-size:18px;color:var(--accent)}
+.stat span{font-size:10px;color:var(--muted)}
+.safe-panel{margin-top:20px}
+.safe-card{border:1px solid #3a2a12;background:linear-gradient(145deg,#1a1610,#121829);border-radius:18px;padding:20px}
+.safe-lock{font-size:42px;margin:0 0 10px;color:#f0c060;text-align:center}
+.safe-points{margin:12px 0 16px;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
+.file-list.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border:0;background:transparent;overflow:visible}
+.file-list.grid .file-row{flex-direction:column;align-items:flex-start;border:1px solid var(--line);border-radius:14px;background:var(--panel);min-height:110px}
+.file-list.grid .file-actions{margin-left:0;margin-top:8px}
+body.light .safe-card{background:linear-gradient(145deg,#fff8e8,#fff);border-color:#e8d4a8}
+#access-dot.on{background:#3ddc84;box-shadow:0 0 12px #3ddc84}
