@@ -13,7 +13,7 @@
   <header class="topbar">
     <button class="icon-button" id="menu-button" aria-label="Abrir menú" aria-expanded="false">☰</button>
     <div class="brand"><span class="brand-mark" aria-hidden="true">W</span><span>W FILE MANAGER</span></div>
-    <button class="icon-button" id="more-button" aria-label="Más opciones">⋮</button>
+    <button class="icon-button" id="more-button" aria-label="Actualizar">⋮</button>
   </header>
   <aside class="drawer" id="drawer" aria-label="Menú principal" hidden>
     <button data-view="home">Inicio</button>
@@ -25,27 +25,50 @@
     <button id="theme-button" aria-pressed="false">Cambiar tema</button>
   </aside>
   <main id="app-main">
-    <section class="welcome">
+    <section class="welcome" id="home-section">
       <p class="eyebrow">EXPLORADOR PERSONAL</p>
       <h1>Todos tus archivos.<br><span>En un solo lugar.</span></h1>
-      <p class="muted">Una experiencia clara, rápida y bajo tu control.</p>
+      <p class="muted">Experiencia clara, rápida y bajo tu control. Acceso por carpeta con el selector seguro de Android (SAF).</p>
     </section>
     <section class="storage-card" aria-labelledby="storage-title">
-      <div class="storage-heading"><span class="status-dot" aria-hidden="true"></span><span id="storage-title">Almacenamiento</span><span class="pill">LOCAL</span></div>
-      <div class="storage-track" aria-hidden="true"><span></span></div>
-      <p class="muted" id="storage-note">El espacio disponible aparecerá al conectar el almacenamiento real.</p>
+      <div class="storage-heading"><span class="status-dot" id="access-dot" aria-hidden="true"></span><span id="storage-title">Almacenamiento</span><span class="pill" id="access-pill">LOCAL</span></div>
+      <div class="storage-track" aria-hidden="true"><span id="storage-fill"></span></div>
+      <p class="muted" id="storage-note">Seleccioná una carpeta para ver contenido real. No se pide acceso global al almacenamiento.</p>
       <button class="primary-action" id="choose-folder">Seleccionar carpeta</button>
+      <div class="stat-row" id="stat-row" hidden>
+        <div class="stat"><strong id="stat-total">0</strong><span>Elementos</span></div>
+        <div class="stat"><strong id="stat-dirs">0</strong><span>Carpetas</span></div>
+        <div class="stat"><strong id="stat-files">0</strong><span>Archivos</span></div>
+      </div>
     </section>
-    <section class="section-heading"><div><p class="eyebrow">ACCESO RÁPIDO</p><h2>Explorar por categoría</h2></div></section>
+    <section class="section-heading" id="cat-heading"><div><p class="eyebrow">ACCESO RÁPIDO</p><h2>Explorar por categoría</h2></div></section>
     <section class="category-grid" aria-label="Categorías de archivos">
-      <button class="category" data-view="documents"><span class="category-icon" aria-hidden="true">▤</span><span>Documentos</span><small>PDF, TXT y más</small></button>
-      <button class="category" data-view="images"><span class="category-icon" aria-hidden="true">▧</span><span>Imágenes</span><small>Fotos y gráficos</small></button>
-      <button class="category" data-view="audio"><span class="category-icon" aria-hidden="true">♫</span><span>Audio</span><small>Música y sonidos</small></button>
-      <button class="category" data-view="archives"><span class="category-icon" aria-hidden="true">▣</span><span>Archivos ZIP</span><small>Comprimidos</small></button>
+      <button class="category" data-view="documents"><span class="category-icon" aria-hidden="true">▤</span><span>Documentos</span><small id="count-documents">PDF, TXT y más</small></button>
+      <button class="category" data-view="images"><span class="category-icon" aria-hidden="true">▧</span><span>Imágenes</span><small id="count-images">Fotos y gráficos</small></button>
+      <button class="category" data-view="audio"><span class="category-icon" aria-hidden="true">♫</span><span>Audio / vídeo</span><small id="count-audio">Música y clips</small></button>
+      <button class="category" data-view="archives"><span class="category-icon" aria-hidden="true">▣</span><span>Archivos ZIP</span><small id="count-archives">Comprimidos</small></button>
+    </section>
+    <section class="safe-panel" id="safe-panel" hidden>
+      <div class="section-heading"><p class="eyebrow">PROTECCIÓN</p><h2>Carpeta segura</h2></div>
+      <div class="safe-card">
+        <p class="safe-lock" aria-hidden="true">⬡</p>
+        <p class="muted">Espacio diferenciado para archivos sensibles. <strong>El cifrado real (AES-GCM) se implementa en la Fase 7.</strong> Por ahora no hay ocultamiento que sustituya al cifrado.</p>
+        <ul class="safe-points">
+          <li>No confundir «ocultar» con cifrar.</li>
+          <li>La contraseña y las claves no se guardarán en texto plano.</li>
+          <li>Hasta la Fase 7, usá Destacados o una carpeta normal bajo tu control.</li>
+        </ul>
+        <button class="primary-action" id="safe-back" type="button">Volver al inicio</button>
+      </div>
     </section>
     <section class="file-panel" id="file-panel" aria-labelledby="files-title" hidden>
       <div class="section-heading"><p class="eyebrow">CARPETA SELECCIONADA</p><h2 id="files-title">Contenido real</h2><p id="current-path" class="muted">Carpeta inicial</p></div>
-      <div class="file-tools"><button id="go-up" class="tool-button" disabled>Volver al inicio</button><input id="file-search" type="search" placeholder="Buscar en esta carpeta…" aria-label="Buscar archivos por nombre"><select id="sort-select" aria-label="Ordenar por"><option value="name">Nombre</option><option value="size">Tamaño</option><option value="modified">Fecha</option></select></div>
+      <div class="file-tools">
+        <button id="go-up" class="tool-button" disabled>Volver</button>
+        <input id="file-search" type="search" placeholder="Buscar en esta carpeta…" aria-label="Buscar archivos por nombre">
+        <select id="sort-select" aria-label="Ordenar por"><option value="name">Nombre</option><option value="size">Tamaño</option><option value="modified">Fecha</option></select>
+        <button id="view-toggle" class="tool-button" type="button" aria-label="Cambiar vista lista o cuadrícula">Lista</button>
+      </div>
       <div class="filter-row" aria-label="Filtrar por categoría"><button data-filter="all" aria-pressed="true">Todos</button><button data-filter="documents" aria-pressed="false">Documentos</button><button data-filter="images" aria-pressed="false">Imágenes</button><button data-filter="audio" aria-pressed="false">Audio/vídeo</button><button data-filter="archives" aria-pressed="false">ZIP</button></div>
       <ul id="file-list" class="file-list" aria-live="polite"></ul>
     </section>
