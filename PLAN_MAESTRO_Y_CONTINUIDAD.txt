@@ -2,20 +2,17 @@ W FILE MANAGER — PLAN MAESTRO Y CONTINUIDAD
 ================================================
 https://github.com/wair0/W-FILE-MANAGER · rama main
 
-FASE 1 — COMPLETA · FASE 2 — COMPLETA · FASE 3 — COMPLETA
-FASE 4 — COMPLETA · FASE 5 — COMPLETA
+FASES 1–6 — COMPLETAS
 
-FASE 6 — ZIP, EDITOR DE TEXTO Y MULTIMEDIA — COMPLETA
-- createZip: comprime un archivo en un ZIP nuevo en la carpeta actual.
-- extractZip: extrae entradas a la carpeta actual con protección Zip Slip (.., rutas absolutas), omite directorios y entradas >50 MB.
-- readTextFile / writeTextFile: editor UTF-8 con límite 512 KB.
-- UI: botones Aa (editar), Z (crear ZIP), ⇓ (extraer), panel editor con Guardar/Cerrar.
-- Multimedia: apertura externa vía openFile (sin reproductor interno).
-- Versión app 0.6.0.
+FASE 7 — CIFRADO AES-GCM + CARPETA SEGURA — COMPLETA
+- Formato WFM1: magic + version + salt(16) + nonce(12) + ciphertext+tag GCM.
+- PBKDF2-HMAC-SHA256, 120000 iteraciones, clave 256 bits.
+- Nonce y salt aleatorios por archivo (SecureRandom).
+- Contraseña solo en memoria (CharArray); lock limpia con Arrays.fill.
+- encryptDocument crea .wfm y conserva original.
+- decryptDocument crea copia en claro; AEADBadTag si contraseña/archivo incorrectos.
+- UI: desbloquear/bloquear; botones cifrar/descifrar en explorador.
+- Versión 0.7.0 · CryptoHelper.kt.
 
-FASE 7 — CIFRADO AES-GCM + CARPETA SEGURA — PENDIENTE
 FASE 8 — ROOM / DATASTORE — PENDIENTE
 FASE 9 — PRUEBAS / A11Y / RELEASE — PENDIENTE
-
-ACTUALIZACIÓN — 2026-10-10
-- Fase 6 implementada y marcada COMPLETA.
