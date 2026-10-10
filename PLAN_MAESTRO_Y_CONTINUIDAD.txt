@@ -2,37 +2,20 @@ W FILE MANAGER — PLAN MAESTRO Y CONTINUIDAD
 ================================================
 https://github.com/wair0/W-FILE-MANAGER · rama main
 
-FASE 1 — BASE ANDROID COMPILABLE — COMPLETA
-- WebView + WebViewAssetLoader (appassets.androidplatform.net).
-- Puente tipado WFileNative, origen local restringido.
-- CI assembleDebug OK (artifact APK). Icono adaptive launcher presente.
-- AGP/Kotlin/JDK documentados en README. Prueba en dispositivo real pendiente de registro.
+FASE 1 — COMPLETA · FASE 2 — COMPLETA · FASE 3 — COMPLETA
+FASE 4 — COMPLETA · FASE 5 — COMPLETA
 
-FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN — COMPLETA
-- Temas claro/oscuro (localStorage), drawer, bottom nav, focus-visible, reduced-motion.
-- Vista lista / cuadrícula, tipografía y componentes coherentes.
-- GLSL ambient con fallback.
+FASE 6 — ZIP, EDITOR DE TEXTO Y MULTIMEDIA — COMPLETA
+- createZip: comprime un archivo en un ZIP nuevo en la carpeta actual.
+- extractZip: extrae entradas a la carpeta actual con protección Zip Slip (.., rutas absolutas), omite directorios y entradas >50 MB.
+- readTextFile / writeTextFile: editor UTF-8 con límite 512 KB.
+- UI: botones Aa (editar), Z (crear ZIP), ⇓ (extraer), panel editor con Guardar/Cerrar.
+- Multimedia: apertura externa vía openFile (sin reproductor interno).
+- Versión app 0.6.0.
 
-FASE 3 — PERMISOS Y SAF — COMPLETA
-- Solo SAF; sin MANAGE_EXTERNAL_STORAGE.
-- Persistencia de URI, listado DocumentsContract, manejo de denegación/revocación.
-- Documentado en README.
-
-FASE 4 — EXPLORADOR REAL — COMPLETA
-- Listar, navegar, buscar, ordenar, abrir, renombrar, eliminar, copiar, mover, favoritos.
-- Nota: copy/move según soporte del proveedor SAF.
-
-FASE 5 — INICIO, CATEGORÍAS, DESTACADOS Y SEGURA — COMPLETA
-- Inicio con estado de acceso, contadores de carpeta actual y categorías derivadas de datos reales.
-- Destacados persistentes (SharedPreferences).
-- Carpeta segura: flujo UI diferenciado; cifrado real diferido a Fase 7 (sin fingir protección por ocultación).
-
-FASE 6 — ZIP / EDITOR / MULTIMEDIA — PENDIENTE
 FASE 7 — CIFRADO AES-GCM + CARPETA SEGURA — PENDIENTE
 FASE 8 — ROOM / DATASTORE — PENDIENTE
 FASE 9 — PRUEBAS / A11Y / RELEASE — PENDIENTE
 
 ACTUALIZACIÓN — 2026-10-10
-- Fases 1–3 y 5 marcadas COMPLETAS.
-- versionName 0.5.0 · versionCode 5.
-- UI inicio + panel segura + stats + toggle lista/cuadrícula.
+- Fase 6 implementada y marcada COMPLETA.

@@ -72,6 +72,14 @@
       <div class="filter-row" aria-label="Filtrar por categoría"><button data-filter="all" aria-pressed="true">Todos</button><button data-filter="documents" aria-pressed="false">Documentos</button><button data-filter="images" aria-pressed="false">Imágenes</button><button data-filter="audio" aria-pressed="false">Audio/vídeo</button><button data-filter="archives" aria-pressed="false">ZIP</button></div>
       <ul id="file-list" class="file-list" aria-live="polite"></ul>
     </section>
+    <section class="editor-panel" id="editor-panel" hidden>
+      <div class="section-heading"><p class="eyebrow">EDITOR</p><h2 id="editor-title">Texto</h2></div>
+      <textarea id="editor-area" spellcheck="false" aria-label="Contenido del archivo"></textarea>
+      <div class="editor-actions">
+        <button type="button" class="primary-action" id="editor-save">Guardar</button>
+        <button type="button" class="tool-button" id="editor-close">Cerrar</button>
+      </div>
+    </section>
     <section class="notice" role="status" aria-live="polite"><span class="notice-icon" aria-hidden="true">i</span><p id="native-status">Interfaz lista. Seleccioná una carpeta para ver sus archivos.</p></section>
   </main>
   <nav class="bottom-nav" aria-label="Navegación principal">
