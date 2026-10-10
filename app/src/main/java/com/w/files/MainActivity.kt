@@ -15,6 +15,11 @@ import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
@@ -31,31 +36,24 @@ class MainActivity : ComponentActivity() {
             if (uri != null) {
                 val flags = result.data?.flags ?: 0
                 val persistableFlags = flags and (
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
                 try {
                     contentResolver.takePersistableUriPermission(uri, persistableFlags)
                     selectedTreeUri = uri
                     currentDocumentId = DocumentsContract.getTreeDocumentId(uri)
                     directoryStack.clear()
                     notifyWeb("onFolderAccessResult", JSONObject().put("granted", true).put("message", "Acceso concedido. Cargando contenido…"))
-                    runCatching { directoryPayload() }.onSuccess { notifyWeb("onDirectoryResult", it) }.onFailure { notifyWeb("onDirectoryResult", JSONObject().put("error", "No se pudo leer esta carpeta.").put("items", JSONArray())) }
+                    runCatching { directoryPayload() }.onSuccess { notifyWeb("onDirectoryResult", it) }
+                        .onFailure { notifyWeb("onDirectoryResult", JSONObject().put("error", "No se pudo leer esta carpeta.").put("items", JSONArray())) }
                 } catch (_: SecurityException) {
-                    notifyWeb("onFolderAccessResult", JSONObject()
-                        .put("granted", false)
-                        .put("message", "Android no permitió conservar el acceso a esta carpeta.")
-                    )
+                    notifyWeb("onFolderAccessResult", JSONObject().put("granted", false).put("message", "Android no permitió conservar el acceso a esta carpeta."))
                 }
             } else {
-                notifyWeb("onFolderAccessResult", JSONObject()
-                    .put("granted", false).put("message", "No se seleccionó ninguna carpeta.")
-                )
+                notifyWeb("onFolderAccessResult", JSONObject().put("granted", false).put("message", "No se seleccionó ninguna carpeta."))
             }
         } else {
-            notifyWeb("onFolderAccessResult", JSONObject()
-                .put("granted", false).put("message", "Selección cancelada.")
-            )
+            notifyWeb("onFolderAccessResult", JSONObject().put("granted", false).put("message", "Selección cancelada."))
         }
     }
 
@@ -64,11 +62,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         selectedTreeUri = contentResolver.persistedUriPermissions
             .firstOrNull { it.isReadPermission || it.isWritePermission }?.uri
-
         val assetLoader = WebViewAssetLoader.Builder()
-            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
-            .build()
-
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this)).build()
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -80,17 +75,10 @@ class MainActivity : ComponentActivity() {
             settings.setSupportMultipleWindows(false)
             settings.safeBrowsingEnabled = true
             webViewClient = object : WebViewClientCompat() {
-                override fun shouldInterceptRequest(
-                    view: WebView,
-                    request: android.webkit.WebResourceRequest
-                ): android.webkit.WebResourceResponse? =
+                override fun shouldInterceptRequest(view: WebView, request: android.webkit.WebResourceRequest) =
                     assetLoader.shouldInterceptRequest(request.url)
-
-                override fun shouldOverrideUrlLoading(
-                    view: WebView,
-                    request: android.webkit.WebResourceRequest
-                ): Boolean = request.url.scheme != "https" ||
-                    request.url.host != "appassets.androidplatform.net"
+                override fun shouldOverrideUrlLoading(view: WebView, request: android.webkit.WebResourceRequest): Boolean =
+                    request.url.scheme != "https" || request.url.host != "appassets.androidplatform.net"
             }
             addJavascriptInterface(UiBridge(), "WFileNative")
             loadUrl("https://appassets.androidplatform.net/assets/www/index.html")
@@ -147,9 +135,7 @@ class MainActivity : ComponentActivity() {
     private fun notifyWeb(callback: String, payload: JSONObject) {
         if (!::webView.isInitialized || isFinishing) return
         val quoted = JSONObject.quote(payload.toString())
-        webView.post {
-            webView.evaluateJavascript("window.$callback && window.$callback(JSON.parse($quoted));", null)
-        }
+        webView.post { webView.evaluateJavascript("window.$callback && window.$callback(JSON.parse($quoted));", null) }
     }
 
     override fun onDestroy() {
@@ -164,17 +150,13 @@ class MainActivity : ComponentActivity() {
 
     inner class UiBridge {
         @JavascriptInterface
-        fun getAppInfo(): String = JSONObject()
-            .put("name", "W FILE MANAGER").put("version", "0.5.0").put("status", "ready").toString()
+        fun getAppInfo(): String = JSONObject().put("name", "W FILE MANAGER").put("version", "0.6.0").put("status", "ready").toString()
 
         @JavascriptInterface
         fun requestFolderAccess() {
             runOnUiThread {
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                    addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 }
                 folderPicker.launch(intent)
             }
@@ -186,15 +168,11 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun listFiles(): String {
             selectedTreeUri ?: return JSONObject().put("error", "Seleccioná una carpeta primero.").put("items", JSONArray()).toString()
-            return try {
-                directoryPayload().toString()
-            } catch (_: SecurityException) {
+            return try { directoryPayload().toString() } catch (_: SecurityException) {
                 selectedTreeUri = null
-                JSONObject().put("error", "El permiso de la carpeta fue revocado.")
-                    .put("items", JSONArray()).toString()
+                JSONObject().put("error", "El permiso de la carpeta fue revocado.").put("items", JSONArray()).toString()
             } catch (_: Exception) {
-                JSONObject().put("error", "No se pudo leer el contenido de esta carpeta.")
-                    .put("items", JSONArray()).toString()
+                JSONObject().put("error", "No se pudo leer el contenido de esta carpeta.").put("items", JSONArray()).toString()
             }
         }
 
@@ -216,9 +194,7 @@ class MainActivity : ComponentActivity() {
                     directoryPayload().toString()
                 }
             } catch (_: SecurityException) {
-                selectedTreeUri = null
-                currentDocumentId = null
-                directoryStack.clear()
+                selectedTreeUri = null; currentDocumentId = null; directoryStack.clear()
                 JSONObject().put("error", "El permiso de la carpeta fue revocado.").put("items", JSONArray()).toString()
             } catch (_: Exception) {
                 JSONObject().put("error", "No se pudo abrir esta carpeta.").put("items", JSONArray()).toString()
@@ -254,9 +230,8 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun renameDocument(documentId: String, newName: String): String {
             val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
-            if (newName.isBlank() || newName.contains("/") || newName.contains("\\")) {
+            if (newName.isBlank() || newName.contains("/") || newName.contains("\\"))
                 return JSONObject().put("ok", false).put("message", "Nombre no válido.").toString()
-            }
             return try {
                 val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
                 val result = DocumentsContract.renameDocument(contentResolver, uri, newName)
@@ -285,8 +260,7 @@ class MainActivity : ComponentActivity() {
             val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
             return try {
                 val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
-                val items = listDirectory(tree, parentId)
-                val exists = (0 until items.length()).any { items.getJSONObject(it).optString("id") == documentId }
+                val exists = (0 until listDirectory(tree, parentId).length()).any { listDirectory(tree, parentId).getJSONObject(it).optString("id") == documentId }
                 if (!exists) return JSONObject().put("ok", false).put("message", "El elemento ya no está en esta carpeta.").toString()
                 val src = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
                 val destParent = DocumentsContract.buildDocumentUriUsingTree(tree, parentId)
@@ -305,9 +279,6 @@ class MainActivity : ComponentActivity() {
                 val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
                 if (targetFolderId.isBlank()) return JSONObject().put("ok", false).put("message", "Carpeta destino no válida.").toString()
                 val items = listDirectory(tree, parentId)
-                val srcItem = (0 until items.length()).map { items.getJSONObject(it) }
-                    .firstOrNull { it.optString("id") == documentId }
-                    ?: return JSONObject().put("ok", false).put("message", "El elemento ya no está disponible.").toString()
                 val targetOk = targetFolderId == parentId || (0 until items.length()).any {
                     val o = items.getJSONObject(it)
                     o.optString("id") == targetFolderId && o.optBoolean("directory")
@@ -333,13 +304,129 @@ class MainActivity : ComponentActivity() {
                 val folders = JSONArray()
                 for (i in 0 until items.length()) {
                     val o = items.getJSONObject(i)
-                    if (o.optBoolean("directory")) {
-                        folders.put(JSONObject().put("id", o.optString("id")).put("name", o.optString("name")))
-                    }
+                    if (o.optBoolean("directory")) folders.put(JSONObject().put("id", o.optString("id")).put("name", o.optString("name")))
                 }
                 JSONObject().put("items", folders).put("currentId", parentId).toString()
             } catch (_: Exception) {
                 JSONObject().put("items", JSONArray()).toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun readTextFile(documentId: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val item = listDirectory(tree, parentId).let { items ->
+                    (0 until items.length()).map { items.getJSONObject(it) }.firstOrNull {
+                        it.optString("id") == documentId && !it.optBoolean("directory")
+                    }
+                } ?: return JSONObject().put("ok", false).put("message", "Archivo no encontrado.").toString()
+                if (item.optLong("size", 0) > 512 * 1024)
+                    return JSONObject().put("ok", false).put("message", "El archivo supera 512 KB; no se abre en el editor.").toString()
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                val text = contentResolver.openInputStream(uri)?.use { it.bufferedReader(Charsets.UTF_8).readText() }
+                    ?: return JSONObject().put("ok", false).put("message", "No se pudo leer el archivo.").toString()
+                JSONObject().put("ok", true).put("name", item.optString("name")).put("id", documentId).put("content", text).toString()
+            } catch (e: Exception) {
+                JSONObject().put("ok", false).put("message", "Error al leer: " + (e.message ?: "desconocido")).toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun writeTextFile(documentId: String, content: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            if (content.length > 512 * 1024)
+                return JSONObject().put("ok", false).put("message", "Contenido demasiado grande (>512 KB).").toString()
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val exists = (0 until listDirectory(tree, parentId).length()).any {
+                    val o = listDirectory(tree, parentId).getJSONObject(it)
+                    o.optString("id") == documentId && !o.optBoolean("directory")
+                }
+                if (!exists) return JSONObject().put("ok", false).put("message", "Archivo no encontrado.").toString()
+                val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                contentResolver.openOutputStream(uri, "wt")?.use { out ->
+                    out.write(content.toByteArray(Charsets.UTF_8)); out.flush()
+                } ?: return JSONObject().put("ok", false).put("message", "No se pudo escribir el archivo.").toString()
+                JSONObject().put("ok", true).put("message", "Archivo guardado.").toString()
+            } catch (e: Exception) {
+                JSONObject().put("ok", false).put("message", "Error al guardar: " + (e.message ?: "desconocido")).toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun createZip(documentId: String, zipName: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            val safeName = zipName.trim().ifBlank { "archivo.zip" }.let {
+                val n = if (it.lowercase().endsWith(".zip")) it else "$it.zip"
+                n.replace("/", "_").replace("\\", "_")
+            }
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val items = listDirectory(tree, parentId)
+                val item = (0 until items.length()).map { items.getJSONObject(it) }
+                    .firstOrNull { it.optString("id") == documentId && !it.optBoolean("directory") }
+                    ?: return JSONObject().put("ok", false).put("message", "Solo se pueden comprimir archivos (no carpetas en esta versión).").toString()
+                val parentUri = DocumentsContract.buildDocumentUriUsingTree(tree, parentId)
+                val zipUri = DocumentsContract.createDocument(contentResolver, parentUri, "application/zip", safeName)
+                    ?: return JSONObject().put("ok", false).put("message", "No se pudo crear el ZIP.").toString()
+                val srcUri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                contentResolver.openOutputStream(zipUri)?.use { out ->
+                    ZipOutputStream(BufferedOutputStream(out)).use { zos ->
+                        zos.putNextEntry(ZipEntry(item.optString("name").replace("/", "_")))
+                        contentResolver.openInputStream(srcUri)?.use { input -> input.copyTo(zos) }
+                        zos.closeEntry()
+                    }
+                } ?: return JSONObject().put("ok", false).put("message", "No se pudo escribir el ZIP.").toString()
+                JSONObject().put("ok", true).put("message", "ZIP creado: $safeName").toString()
+            } catch (e: Exception) {
+                JSONObject().put("ok", false).put("message", "Error al crear ZIP: " + (e.message ?: "desconocido")).toString()
+            }
+        }
+
+        @JavascriptInterface
+        fun extractZip(documentId: String): String {
+            val tree = selectedTreeUri ?: return JSONObject().put("ok", false).put("message", "Seleccioná una carpeta primero.").toString()
+            return try {
+                val parentId = currentDocumentId ?: DocumentsContract.getTreeDocumentId(tree)
+                val items = listDirectory(tree, parentId)
+                val item = (0 until items.length()).map { items.getJSONObject(it) }
+                    .firstOrNull { it.optString("id") == documentId && !it.optBoolean("directory") }
+                    ?: return JSONObject().put("ok", false).put("message", "Archivo no encontrado.").toString()
+                val name = item.optString("name").lowercase()
+                if (!name.endsWith(".zip") && !item.optString("mimeType").contains("zip"))
+                    return JSONObject().put("ok", false).put("message", "El archivo no parece un ZIP.").toString()
+                val srcUri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
+                val parentUri = DocumentsContract.buildDocumentUriUsingTree(tree, parentId)
+                var extracted = 0; var skipped = 0
+                contentResolver.openInputStream(srcUri)?.use { input ->
+                    ZipInputStream(BufferedInputStream(input)).use { zis ->
+                        var entry = zis.nextEntry
+                        while (entry != null) {
+                            val clean = (entry.name ?: "").replace("\\", "/").trimStart('/')
+                            if (clean.contains("..") || clean.startsWith("/") || clean.isBlank()) {
+                                skipped++; zis.closeEntry(); entry = zis.nextEntry; continue
+                            }
+                            val baseName = clean.substringAfterLast('/')
+                            if (baseName.isBlank() || entry.isDirectory) {
+                                zis.closeEntry(); entry = zis.nextEntry; continue
+                            }
+                            if (entry.size > 50L * 1024 * 1024) {
+                                skipped++; zis.closeEntry(); entry = zis.nextEntry; continue
+                            }
+                            val outUri = DocumentsContract.createDocument(contentResolver, parentUri, "application/octet-stream", baseName)
+                            if (outUri != null) {
+                                contentResolver.openOutputStream(outUri)?.use { out -> zis.copyTo(out) }
+                                extracted++
+                            } else skipped++
+                            zis.closeEntry(); entry = zis.nextEntry
+                        }
+                    }
+                } ?: return JSONObject().put("ok", false).put("message", "No se pudo abrir el ZIP.").toString()
+                JSONObject().put("ok", true).put("message", "Extraídos: $extracted. Omitidos: $skipped.").put("extracted", extracted).put("skipped", skipped).toString()
+            } catch (e: Exception) {
+                JSONObject().put("ok", false).put("message", "Error al extraer: " + (e.message ?: "desconocido")).toString()
             }
         }
 
@@ -349,11 +436,9 @@ class MainActivity : ComponentActivity() {
             val items = JSONArray()
             for (i in 0 until saved.length()) {
                 val item = saved.getJSONObject(i)
-                items.put(JSONObject().put("id", item.optString("id"))
-                    .put("name", item.optString("name"))
+                items.put(JSONObject().put("id", item.optString("id")).put("name", item.optString("name"))
                     .put("mimeType", item.optString("mimeType", "application/octet-stream"))
-                    .put("size", item.opt("size") ?: JSONObject.NULL)
-                    .put("directory", false).put("favorite", true)
+                    .put("size", item.opt("size") ?: JSONObject.NULL).put("directory", false).put("favorite", true)
                     .put("treeUri", item.optString("treeUri")))
             }
             return JSONObject().put("items", items).put("favorites", true).toString()
@@ -369,16 +454,13 @@ class MainActivity : ComponentActivity() {
                         .firstOrNull { it.optString("id") == documentId && !it.optBoolean("directory") }
                 } ?: return JSONObject().put("ok", false).put("message", "Solo se pueden destacar archivos.").toString()
                 val saved = JSONArray(favoritePrefs.getString("items", "[]") ?: "[]")
-                val updated = JSONArray()
-                var removed = false
+                val updated = JSONArray(); var removed = false
                 for (i in 0 until saved.length()) {
                     val item = saved.getJSONObject(i)
-                    if (item.optString("treeUri") == tree.toString() && item.optString("id") == documentId) {
-                        removed = true
-                    } else updated.put(item)
+                    if (item.optString("treeUri") == tree.toString() && item.optString("id") == documentId) removed = true
+                    else updated.put(item)
                 }
-                if (!removed) updated.put(JSONObject()
-                    .put("id", documentId).put("name", found.optString("name"))
+                if (!removed) updated.put(JSONObject().put("id", documentId).put("name", found.optString("name"))
                     .put("mimeType", found.optString("mimeType", "application/octet-stream"))
                     .put("size", found.opt("size") ?: JSONObject.NULL).put("treeUri", tree.toString()))
                 favoritePrefs.edit().putString("items", updated.toString()).apply()
@@ -393,12 +475,10 @@ class MainActivity : ComponentActivity() {
         fun openFavorite(documentId: String, treeUriString: String): Boolean {
             return try {
                 val tree = Uri.parse(treeUriString)
-                val hasPermission = contentResolver.persistedUriPermissions.any { it.uri == tree && it.isReadPermission }
-                if (!hasPermission) return false
+                if (!contentResolver.persistedUriPermissions.any { it.uri == tree && it.isReadPermission }) return false
                 val saved = JSONArray(favoritePrefs.getString("items", "[]") ?: "[]")
                 val exists = (0 until saved.length()).any {
-                    saved.getJSONObject(it).optString("id") == documentId &&
-                    saved.getJSONObject(it).optString("treeUri") == treeUriString
+                    saved.getJSONObject(it).optString("id") == documentId && saved.getJSONObject(it).optString("treeUri") == treeUriString
                 }
                 if (!exists) return false
                 val uri = DocumentsContract.buildDocumentUriUsingTree(tree, documentId)
