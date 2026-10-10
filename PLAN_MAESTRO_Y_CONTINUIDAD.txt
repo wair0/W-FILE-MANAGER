@@ -19,153 +19,32 @@ ARQUITECTURA OBLIGATORIA
 
 REGLAS DE TRABAJO
 1. Trabajar directamente en este repositorio; no sustituir los cambios del repo por un ZIP enviado al usuario.
-2. Mantener commits pequeños: 1–2 commits por fase. Mensajes claros en inglés o español, con prefijos como feat:, fix:, test:, docs:.
-3. Antes de cada commit, inspeccionar la versión actual de los archivos y el HEAD de main. No asumir SHA antiguos.
-4. Crear el árbol sobre el árbol actual para no borrar archivos previos; actualizar main con expected SHA y sin force.
-5. No afirmar que compila, que una prueba pasa o que una función está terminada si no se ejecutó una verificación real.
-6. Una fase solo está completa cuando se cumplen sus criterios de salida. Mantener esta hoja de ruta actualizada.
-7. Evitar operaciones destructivas sin confirmación, escritura atómica, manejo de errores y conservación del original hasta verificar el resultado.
-8. No incluir secretos, claves, contraseñas ni datos personales en el repositorio.
-9. Comprobar seguridad de WebView y validar la procedencia de cualquier navegación. Nunca cargar páginas remotas con el puente nativo habilitado.
-10. Antes de una release, probar en dispositivo/emulador y registrar versiones de Android probadas.
-
-ESTADO DE PARTIDA
-Commits iniciales publicados:
-- b1d59edf058fb9ca11479edd75f94d8208acf801 — base Android con WebView y UI HTML/CSS/GLSL.
-- 068f7492b00ab81ec3286bf0df0519bf4f132cda — ajustes de WebView, tema y recursos de launcher.
-Estos commits son una base inicial, no una APK validada. No se ha confirmado compilación real en Android SDK/Gradle.
+2. Mantener commits pequeños: 1–2 commits por fase. Mensajes claros en español mayúsculas o con prefijos feat/fix/docs.
+3. Antes de cada commit, inspeccionar la versión actual de los archivos y el HEAD de main.
+4. No afirmar que compila o que una función está terminada sin verificación real.
+5. Una fase solo está completa cuando se cumplen sus criterios de salida.
 
 PLAN COMPLETO POR FASES
 =======================
 
-FASE 1 — BASE ANDROID COMPILABLE (1–2 commits)
-Objetivo:
-- Configuración raíz Gradle, wrapper versionado, módulo app, manifest, Activity Kotlin y recursos.
-- WebView con WebViewAssetLoader para servir HTML local desde appassets.androidplatform.net.
-- Puente JavaScript-Kotlin mínimo y tipado; origen local limitado; limpieza del WebView en ciclo de vida.
-- Integración de icono de launcher en formatos adaptativos y fallback necesario.
-- Verificar compatibilidad entre AGP, Gradle, Kotlin, JDK y dependencias.
-Criterio de salida:
-- ./gradlew assembleDebug compila con JDK/SDK adecuados.
-- App abre la UI local; navegación externa no puede acceder al puente; no hay errores de recursos.
-Estado: PARCIAL. GitHub Actions run 37979164168 terminó con éxito y publicó el APK debug; aún falta probar la app en dispositivo/emulador.
+FASE 1 — BASE ANDROID COMPILABLE — PARCIAL (CI OK, falta prueba en dispositivo)
+FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN — EN PROGRESO
+FASE 3 — PERMISOS Y SAF — HECHA (selector + listado + persistencia)
+FASE 4 — EXPLORADOR REAL — COMPLETA
+  - Listar, navegar (abrir carpeta / subir / raíz), buscar, ordenar (nombre/tamaño/fecha).
+  - Abrir archivos externos, renombrar, eliminar con confirmación.
+  - Copiar en carpeta actual (copyDocument).
+  - Mover a subcarpeta del nivel actual (moveDocument + listSubfolders).
+  - Favoritos persistentes.
+  Nota: copia/mover dependen del soporte del proveedor SAF; no todos los proveedores implementan copy/move.
+  Pendiente opcional: selección múltiple y vista cuadrícula.
+FASE 5 — INICIO, CATEGORÍAS, DESTACADOS Y SEGURA — EN PROGRESO (UI segura diferenciada)
+FASE 6 — ZIP, EDITOR DE TEXTO Y MULTIMEDIA — PENDIENTE
+FASE 7 — CIFRADO Y CARPETA SEGURA — PENDIENTE
+FASE 8 — PERSISTENCIA Y RENDIMIENTO — PENDIENTE
+FASE 9 — PRUEBAS, ACCESIBILIDAD Y RELEASE — PENDIENTE
 
-FASE 2 — SISTEMA VISUAL Y NAVEGACIÓN HTML/CSS/GLSL (1–2 commits)
-Objetivo:
-- Sistema de diseño coherente: tema oscuro y claro, tipografía, espaciado, componentes y estados.
-- Cabecera con hamburguesa a la izquierda y opciones a la derecha.
-- Barra inferior fija: Inicio, Interno, SD, Destacados y Segura.
-- Menú lateral, menú de opciones y selector de tema solo dentro del menú hamburguesa.
-- Diseño responsive, accesibilidad, áreas táctiles adecuadas, focus-visible y prefers-reduced-motion.
-- Icono de lanzamiento acorde al icono entregado por el usuario; si el archivo de origen no está disponible en GitHub, solicitarlo o localizarlo en los archivos adjuntos antes de sustituirlo por una versión provisional.
-- GLSL solo para efectos útiles, con fallback.
-Criterio de salida:
-- Todas las vistas tienen el mismo lenguaje visual y la navegación funciona sin controles muertos.
-Estado: EN PROGRESO. Portada, navegación y tema; el explorador ahora incorpora búsqueda local, filtros de categorías basados en MIME/extensión, teclado y apertura de carpetas/archivos. Aún faltan controles de ordenación/lista-cuadrícula y el icono final. Se corrigió el botón Volver para subir un nivel y las categorías aplican filtros al listado visible.
-
-FASE 3 — PERMISOS Y ACCESO A ALMACENAMIENTO (1–2 commits)
-Objetivo:
-- Definir la matriz de permisos según versión Android y caso de uso.
-- Selector SAF con persistencia de permiso y recuperación del URI autorizado tras recrear la Activity.
-- Primera lectura de hijos de la carpeta autorizada usando DocumentsContract; no solicita acceso global al almacenamiento.
-- Usar Storage Access Framework cuando corresponda; solicitar MANAGE_EXTERNAL_STORAGE solo si la funcionalidad y distribución lo justifican.
-- Manejar denegación, revocación, URI persistentes, volúmenes desmontados, SD no disponible y rutas inaccesibles.
-- No solicitar permisos al iniciar sin contexto; explicar por qué se necesitan.
-Criterio de salida:
-- Acceso autorizado y denegado tratados correctamente en dispositivos/versiones objetivo.
-
-FASE 4 — EXPLORADOR REAL (1–2 commits)
-Objetivo:
-- Implementar un contrato Kotlin para listar directorios y devolver DTOs serializados de forma segura.
-- Mostrar archivos reales con nombre, extensión, tamaño, fecha, MIME y tipo.
-- Breadcrumbs, navegación atrás, búsqueda, ordenación, lista/cuadrícula y selección múltiple.
-- Abrir archivos con Intent/ContentResolver y FileProvider cuando corresponda.
-- Copiar, mover, renombrar y eliminar con confirmación y resultados explícitos.
-- Estados de carga, carpeta vacía, permisos insuficientes, errores y cancelación.
-Criterio de salida:
-- Pruebas manuales de operaciones sobre archivos de prueba; no se simulan resultados como si fueran reales.
-
-FASE 5 — INICIO, CATEGORÍAS, DESTACADOS Y SEGURA (1–2 commits)
-Objetivo:
-- Inicio inspirado en un gestor moderno: almacenamiento real, recientes, categorías y accesos rápidos.
-- Categorías derivadas de resultados reales, no contadores falsos.
-- Favoritos persistentes.
-- Diseñar carpeta segura como un flujo claramente diferenciado, sin fingir que ocultar un archivo equivale a cifrarlo.
-Criterio de salida:
-- Los accesos abren resultados reales y los estados se actualizan después de operaciones.
-
-FASE 6 — ZIP, EDITOR DE TEXTO Y APERTURA MULTIMEDIA (1–2 commits)
-Objetivo:
-- Compresión y extracción ZIP con progreso, cancelación y control de nombres/rutas.
-- Prevenir Zip Slip, traversal, sobrescritura no confirmada y archivos parcialmente escritos.
-- Editor de texto UTF-8 con límites razonables, detección de errores y guardado atómico.
-- Audio/vídeo e imágenes se abren con aplicaciones externas; no crear reproductor interno separado.
-Criterio de salida:
-- Casos válidos, archivos dañados, cancelación, falta de espacio y colisiones de nombre tratados.
-
-FASE 7 — CIFRADO Y CARPETA SEGURA (1–2 commits)
-Objetivo:
-- Revisar AES-GCM con nonce único aleatorio por archivo, autenticación, versión de formato y gestión de claves adecuada.
-- No almacenar contraseñas en texto plano ni incluir claves fijas en el código.
-- Flujo de cifrado/descifrado por bloques para archivos grandes, salida temporal y reemplazo solo tras verificación.
-- Mantener el original hasta verificar el resultado salvo que el usuario confirme explícitamente otra cosa.
-- Recuperación controlada, contraseña incorrecta, archivos truncados/corruptos y advertencia sobre recuperación de contraseña.
-- Biometría opcional como control de acceso; no tratar biometría como sustituto automático de cifrado.
-Criterio de salida:
-- Pruebas con archivo válido, contraseña incorrecta, modificación del ciphertext, truncamiento y fallo durante escritura.
-
-FASE 8 — PERSISTENCIA Y RENDIMIENTO (1 commit, segundo solo si necesario)
-Objetivo:
-- Room para favoritos/metadatos que deban persistir y DataStore para preferencias.
-- No indexar todo el almacenamiento sin permiso/consentimiento.
-- Trabajo de IO fuera del hilo principal, listas eficientes, caché invalidable y actualizaciones consistentes.
-Criterio de salida:
-- Favoritos y preferencias sobreviven al reinicio; UI fluida en colecciones grandes.
-
-FASE 9 — PRUEBAS, ACCESIBILIDAD Y RELEASE (1–2 commits)
-Objetivo:
-- Pruebas unitarias de repositorio, permisos abstractos, ZIP, cifrado y serialización.
-- Pruebas de integración de WebView/puente y escenarios manuales Android.
-- Revisar contraste, TalkBack, focus, áreas táctiles, texto escalable, rotación y reduced motion.
-- Revisar manifest, dependencias, logs, política de permisos y release minificada si se habilita.
-- Generar APK/AAB firmado en entorno seguro; nunca subir keystore ni contraseñas.
-Criterio de salida:
-- assembleDebug y assembleRelease ejecutados, pruebas registradas y limitaciones documentadas.
-
-REGISTRO DE AVANCE — 2026-10-09
-- Commit `850240a`: listado inicial vía SAF y workflow CI. Run `37979164168` terminó `success` y publicó APK debug artifact `11639644957`. CI exitoso no sustituye pruebas en dispositivo.
-- Implementación en curso: navegación por carpetas validando hijo directo, retorno a raíz y apertura externa mediante Intent.
-- Pendiente: ejecutar CI tras este cambio y probar en Android con proveedores SAF reales.
-
-PRÓXIMOS PASOS INMEDIATOS
-1. Obtener/añadir Gradle Wrapper y verificar compatibilidad de versiones.
-2. Compilar con Android SDK/JDK disponibles; arreglar errores reales.
-3. Integrar el icono original del usuario si el archivo no está en el repo.
-4. Cerrar Fase 1.
-5. Continuar Fase 2 con la UI HTML/CSS/GLSL, manteniendo Kotlin como motor funcional.
-6. Después avanzar en orden por las fases 3–9; no saltar a operaciones destructivas sin pruebas.
-
-COMANDOS DE VALIDACIÓN (ENTORNO CON JDK + ANDROID SDK)
-- ./gradlew --version
-- ./gradlew assembleDebug
-- ./gradlew test
-- ./gradlew lint
-- ./gradlew assembleRelease
-Los comandos son objetivos de validación, no afirmación de que ya se hayan ejecutado.
-
-ACTUALIZACIÓN DE ESTE DOCUMENTO
-Cada vez que cambie el plan o se cierre una fase, actualizar este archivo en un commit. Registrar fecha, SHA de commit, cambios, pruebas ejecutadas, resultado y pendientes. Mantener los estados: PENDIENTE, EN PROGRESO, BLOQUEADA o COMPLETA.
-
-ACTUALIZACIÓN — 2026-10-10
-- Fase 4 avanzando: se añaden ordenación (nombre/tamaño/fecha), renombrado y eliminación con confirmación mediante DocumentsContract.
-- Métodos nativos renameDocument y deleteDocument expuestos de forma controlada.
-- UI actualizada con selector de orden y botones de acción por elemento.
-- Pendiente: copia/mover, selección múltiple y validación en dispositivo.
-Estado Fase 4: EN PROGRESO.
-
-ACTUALIZACIÓN 3 — 2026-10-10
-- Restaurado código funcional tras commits con placeholders rotos.
-- Fase 4 (ordenación + rename + delete) restaurada y estable.
-- Inicio de Fase 5: flujo diferenciado de Carpeta Segura (UI + mensaje claro de que el cifrado llega en Fase 7).
-Estado Fase 4: CASI COMPLETA (falta copia/mover UX y selección múltiple).
-Estado Fase 5: EN PROGRESO.
+ACTUALIZACIÓN 4 — 2026-10-10
+- Commits: FIX restaurar MainActivity + FEAT UI copia/mover.
+- Fase 4 marcada COMPLETA.
+- Versión app 0.5.0.
