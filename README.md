@@ -97,3 +97,12 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - El menú ofrece acciones según el tipo: abrir, editar texto, ver contenido ZIP, extraer, copiar, mover, renombrar, comprimir, compartir, favoritos, propiedades y eliminar.
 - En escritorio, el clic secundario sobre un elemento también abre el menú contextual.
 - Pendiente de validar en dispositivo: pulsación larga, cancelación del gesto y acciones para ZIP y otros tipos de archivo.
+
+
+## Reproducción multimedia y miniaturas
+
+- Los archivos de audio y vídeo compatibles con Android WebView se abren en un reproductor integrado con controles.
+- Si el códec o contenedor no es compatible, el reproductor muestra un aviso y permite abrir el archivo con otra aplicación.
+- Las imágenes conservan miniatura directa; los vídeos generan miniaturas con `MediaMetadataRetriever` y los PDF muestran la primera página mediante `PdfRenderer`.
+- La generación de miniaturas se realiza a demanda y se conserva en memoria durante la sesión. Los formatos dañados o no compatibles mantienen el icono de tipo como alternativa.
+- Pendiente: confirmar reproducción y miniaturas en un dispositivo Android real; el soporte de códecs depende de la versión de Android y del archivo.
