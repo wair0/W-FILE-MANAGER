@@ -9,7 +9,8 @@ Repositorio: https://github.com/wair0/W-FILE-MANAGER/
 - Android applicationId y namespace: `com.wfilemanager.app`.
 - Nombre del APK: `WFILEMANAGER.APK`.
 - Nombre del ZIP de fuentes: `WFILEMANAGER.zip`.
-- Nombre del artefacto descargable de GitHub Actions: `WFILEMANAGER` (quitar `DELIVERABLES` del nombre del artefacto).
+- Artefacto instalable de GitHub Actions: `WFILEMANAGER`, debe contener solo `WFILEMANAGER.APK`.
+- Artefacto opcional de fuentes: `WFILEMANAGER-SOURCE`, contiene `WFILEMANAGER.zip` por separado.
 - Trabajar directamente en `main`.
 - No crear ramas alternativas, commits de validación ni workflows dedicados exclusivamente a validar cambios.
 - Usar GitHub Actions para compilar; no exigir una compilación local como parte del flujo de entrega.
@@ -63,14 +64,12 @@ Las ejecuciones citadas durante el seguimiento incluyen:
 
 Consultar https://github.com/wair0/W-FILE-MANAGER/actions para conocer el estado real de la ejecución más reciente. No asumir que una ejecución terminó bien por haber terminado una anterior. Verificar los logs y el listado de artefactos de la ejecución actual.
 
-El artefacto descargable debe llamarse `WFILEMANAGER` y contener exactamente los entregables esperados:
-- `WFILEMANAGER.APK`
-- `WFILEMANAGER.zip`
+El artefacto instalable `WFILEMANAGER` debe contener únicamente `WFILEMANAGER.APK`. El ZIP de fuentes `WFILEMANAGER.zip` se publica por separado en el artefacto `WFILEMANAGER-SOURCE`, para evitar un ZIP dentro del ZIP que descarga GitHub Actions.
 
 ## Próximas tareas
 
 1. Confirmar que el workflow más reciente termina correctamente tras los cambios de nombre y CI.
-2. Comprobar que el artefacto se publica como `WFILEMANAGER`, sin `DELIVERABLES`, y que incluye los dos archivos con sus nombres exactos.
+2. Comprobar en la nueva ejecución que `WFILEMANAGER` contiene solo `WFILEMANAGER.APK` y que `WFILEMANAGER-SOURCE` contiene por separado `WFILEMANAGER.zip`.
 3. Inspeccionar el APK generado: integridad del archivo, applicationId `com.wfilemanager.app`, firma y recursos web.
 4. Probar instalación y arranque en Android; no afirmar pruebas físicas si no se han realizado.
 5. Probar permisos concedidos/denegados/revocados y acceso al almacenamiento.
@@ -92,10 +91,10 @@ El artefacto descargable debe llamarse `WFILEMANAGER` y contener exactamente los
 
 ## Verificación de entrega — 2026-10-15
 
-- Se inspeccionó el workflow `.github/workflows/build.yml`: compila debug y release, ejecuta `node --check app/src/main/assets/www/app.js` y sube los dos entregables con `if-no-files-found: error`.
+- Se inspeccionó el workflow `.github/workflows/build.yml`: compila debug y release, ejecuta `node --check app/src/main/assets/www/app.js` y publica los entregables con `if-no-files-found: error`.
 - La ejecución `38699201417` terminó con conclusión `success`; el job `Build APK and source package` y sus pasos de validación JS, compilación, preparación y subida finalizaron correctamente.
 - El artefacto publicado se llama exactamente `WFILEMANAGER` y está asociado al commit `9ed3bac4448b3872de8ad12de08ea1496d414dec`, que incluye el cambio de nombre de artefacto `550da9c6b34e0f26f2f36f01660e9dc1b54a3815`.
-- Se descargó e inspeccionó el ZIP del artefacto: contiene directamente `WFILEMANAGER.APK` (2.546.604 bytes) y `WFILEMANAGER.zip` (252.683 bytes). No hay un ZIP adicional envolviendo los entregables.
+- La inspección anterior encontró `WFILEMANAGER.APK` (2.546.604 bytes) y `WFILEMANAGER.zip` (252.683 bytes) juntos en el artefacto. Aunque no había otro nivel adicional de ZIP, incluir el ZIP de fuentes dentro del paquete de descarga de GitHub Actions resulta confuso. Se corrigió el workflow para publicar el APK y el ZIP de fuentes como artefactos separados; falta comprobar el resultado de la nueva ejecución.
 - Las comprobaciones de integridad ZIP finalizaron sin errores para el artefacto, el APK y el ZIP de fuentes. El APK contiene `AndroidManifest.xml`, archivos DEX y recursos `assets/www/`; el ZIP de fuentes contiene archivos Gradle y la interfaz web.
 - SHA-256 del APK inspeccionado: `5f71da0712947dd397101df38989874fd2e86fb8f15e3837623955263c408a11`.
 - El artefacto expira el 2026-10-29. Descarga desde [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) antes de esa fecha.
