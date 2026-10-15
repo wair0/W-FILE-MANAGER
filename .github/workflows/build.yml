@@ -49,7 +49,7 @@ jobs:
       - name: Upload deliverables
         uses: actions/upload-artifact@v4
         with:
-          name: WFILEMANAGER-DELIVERABLES
+          name: WFILEMANAGER
           path: |
             WFILEMANAGER.APK
             WFILEMANAGER.zip
