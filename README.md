@@ -7,11 +7,13 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 - Header con botón hamburguesa, menú lateral, menú contextual y barra inferior.
 - Inicio simplificado con recientes horizontales, accesos rápidos, dispositivos y favoritos.
 - Explorador con lista/cuadrícula, migas de pan, ordenar, buscar, selección múltiple, copiar/mover/pegar, renombrar, eliminar, carpetas, propiedades, favoritos, compartir, abrir con y archivos ocultos.
-- Visor y extractor ZIP, vista previa de texto/imágenes, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP.
+- Visor y extractor ZIP, vista previa de entradas, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP.
+- Instalación de APK directamente desde dentro de un ZIP: al tocar una entrada `.apk`, se prepara una copia temporal privada y se abre el instalador de Android, sin extraerla manualmente a una carpeta visible. Android puede pedir autorización para instalar desde esta fuente.
+- Miniaturas de video generadas localmente a partir de un fotograma del archivo; si el video o su códec no permite decodificar un fotograma, se conserva el icono de video.
 - Visor/editor/creador TXT con números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente y guardar/guardar como.
 - Visor de imágenes con galería, zoom, cambio por deslizamiento, compartir y eliminar.
 - Reproductores integrados de audio y vídeo desde el almacenamiento local, con controles nativos, búsqueda dentro del archivo y apertura/compartición externa.
-- Inicio con archivos recientes en carrusel horizontal, accesos rápidos y resumen de almacenamiento; el historial guardado se valida para evitar que datos antiguos dañen la pantalla.
+- Pantalla Inicio con resumen de almacenamiento, accesos rápidos, herramientas, dispositivos, favoritos, recientes y permisos.
 - Permisos de almacenamiento adaptados a la versión de Android.
 
 ## Identidad y entregables
@@ -49,6 +51,8 @@ preview/                                mock + script para vista previa HTML
 - El endpoint local de archivos admite solicitudes HTTP Range (206 Partial Content). El reproductor integrado de audio/vídeo lee ahora el archivo local mediante URI `file://` para evitar bloqueos del pipeline multimedia de WebView.
 - La extracción ZIP valida rutas canónicas para evitar zip-slip y no sobrescribe archivos existentes en el destino.
 - La vista previa de entradas ZIP limita la lectura de datos cuyo tamaño no está declarado.
+- Para instalar un APK contenido en un ZIP, se copia temporalmente a `cacheDir/zip-apk` y se comparte con el instalador mediante `FileProvider`; el flujo limita la copia a 700 MB. Android conserva el control final de la instalación.
+- Las miniaturas de video se obtienen en el dispositivo con `MediaMetadataRetriever`; no requieren API ni conexión a Internet.
 - La comprobación de sintaxis JavaScript forma parte del proceso de CI.
 - El APK de entrega se firma con la clave debug para facilitar pruebas e instalación directa. Para distribución pública o actualizaciones consistentes, debe configurarse una clave release propia y protegida.
 
@@ -67,6 +71,8 @@ La compilación correcta no sustituye las pruebas funcionales. Validar en un dis
 - Crear, copiar, mover, renombrar, eliminar, compartir y abrir archivos.
 - Editor TXT y visor de imágenes.
 - Crear, previsualizar y extraer ZIP, incluidos archivos existentes y entradas malformadas.
+- Abrir un ZIP con un APK, tocar la entrada, confirmar que aparece el instalador de Android y probar tanto la instalación como la cancelación.
+- Comprobar miniaturas de video en listas/cuadrículas con distintos formatos, y el icono alternativo para videos dañados o códecs no compatibles.
 - Verificar los nombres, el contenido y la instalación del APK descargado desde Actions.
 
 No declarar pruebas en dispositivo físico si no se realizaron.
@@ -76,3 +82,11 @@ No declarar pruebas en dispositivo físico si no se realizaron.
 ```bash
 python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 ```
+
+
+## Cambios recientes (2026-10-15)
+
+- Se añadió la acción para abrir el instalador de Android desde una entrada APK dentro del visor ZIP, usando un archivo temporal en caché privada y `FileProvider`.
+- Se añadieron miniaturas locales de video con `MediaMetadataRetriever` y carga bajo demanda en la interfaz.
+- Estos cambios están registrados en los commits [a0289cc](https://github.com/wair0/W-FILE-MANAGER/commit/a0289cc8d279887ec92dd67ef33831ba9734e47a), [44ed4c8](https://github.com/wair0/W-FILE-MANAGER/commit/44ed4c861445f91159a904fba427f8124fd8b7a0) y [cfe990e](https://github.com/wair0/W-FILE-MANAGER/commit/cfe990e9f9d8e4818018054e16cb9bb3660992fc).
+- La compilación de esos cambios y las pruebas en dispositivo deben confirmarse antes de considerar validada la entrega.
