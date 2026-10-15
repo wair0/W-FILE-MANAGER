@@ -5,7 +5,7 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 ## Funciones
 
 - Header con botón hamburguesa, menú lateral, menú contextual y barra inferior.
-- Inicio con almacenamiento, accesos rápidos, herramientas, dispositivos, favoritos, recientes y estado de permisos.
+- Inicio simplificado con recientes horizontales, accesos rápidos, dispositivos y favoritos.
 - Explorador con lista/cuadrícula, migas de pan, ordenar, buscar, selección múltiple, copiar/mover/pegar, renombrar, eliminar, carpetas, propiedades, favoritos, compartir, abrir con y archivos ocultos.
 - Visor y extractor ZIP, vista previa de texto/imágenes, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP.
 - Visor/editor/creador TXT con números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente y guardar/guardar como.
@@ -16,13 +16,11 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 
 - **Application ID / namespace:** `com.wfilemanager.app`
 - **APK:** `WFILEMANAGER.APK`
-- **ZIP de fuentes:** `WFILEMANAGER.zip`
 - **Artefacto instalable de GitHub Actions:** `WFILEMANAGER` (contiene solo `WFILEMANAGER.APK`).
-- **Artefacto opcional de fuentes:** `WFILEMANAGER-SOURCE` (contiene `WFILEMANAGER.zip`).
 
 ## Descargar los artefactos
 
-Abre [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) y entra en la ejecución más reciente de **Build W FILE MANAGER**. Descarga el artefacto `WFILEMANAGER` para instalar la app: al extraerlo encontrarás directamente `WFILEMANAGER.APK`, sin otro ZIP dentro. El ZIP de fuentes se descarga por separado como `WFILEMANAGER-SOURCE` si lo necesitas.
+Abre [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) y entra en la ejecución más reciente de **Build W FILE MANAGER**. Descarga el único artefacto `WFILEMANAGER` para instalar la app: al extraerlo encontrarás directamente `WFILEMANAGER.APK`, sin otro ZIP dentro.
 
 El workflow compila las variantes debug y release y se ejecuta al hacer push a `main` o manualmente desde **Actions → Build W FILE MANAGER → Run workflow**. Comprueba el estado y los logs de cada ejecución antes de considerar una entrega válida.
 
