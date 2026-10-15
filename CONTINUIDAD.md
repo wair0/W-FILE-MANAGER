@@ -185,3 +185,13 @@ Enlaces:
 4. Probar miniaturas con varios formatos de video, y el fallback para formatos no compatibles.
 5. Verificar que los archivos temporales de instalación no se acumulen indefinidamente; si se detecta acumulación, añadir limpieza segura de temporales antiguos.
 6. Documentar por separado los resultados de CI y las pruebas reales en dispositivo; no declarar pruebas físicas que no se hayan realizado.
+
+
+## Actualización: menú contextual por pulsación larga (2026-10-15)
+
+- Commit `8321f16` — `ADD LONG-PRESS CONTEXT MENU FOR FILES`.
+- En `app/src/main/assets/www/app.js`, la pulsación larga (480 ms) sobre un elemento de lista/cuadrícula abre `itemMenu(it)` en vez de activar únicamente la selección múltiple.
+- El evento `contextmenu` evita el menú nativo y abre el mismo menú contextual en escritorio. Se conserva el menú del botón de tres puntos.
+- Para ZIP/JAR, el menú ya incluye **Ver contenido ZIP** y **Extraer aquí**; para archivos compatibles incluye **Compartir**. También mantiene copiar/mover, renombrar, comprimir, favoritos, propiedades y eliminar.
+- CI y prueba en dispositivo no confirmados todavía. Verificar especialmente que el gesto no interfiera con el toque normal para abrir, con selección múltiple, cuadrícula y listas de Recientes/Favoritos.
+- Commit: https://github.com/wair0/W-FILE-MANAGER/commit/8321f16415c51dc0e54a3944d9324d9c1ecb00ad
