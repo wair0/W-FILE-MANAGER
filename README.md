@@ -103,6 +103,6 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 
 - Los archivos de audio y vídeo compatibles con Android WebView se abren en un reproductor integrado con controles.
 - Si el códec o contenedor no es compatible, el reproductor muestra un aviso y permite abrir el archivo con otra aplicación.
-- Las imágenes conservan miniatura directa; los vídeos generan miniaturas con `MediaMetadataRetriever` y los PDF muestran la primera página mediante `PdfRenderer`.
+- Las imágenes usan miniaturas JPEG nativas; los vídeos generan miniaturas con `MediaMetadataRetriever` y los PDF muestran la primera página mediante `PdfRenderer`.
 - La generación de miniaturas se realiza a demanda y se conserva en memoria durante la sesión. Los formatos dañados o no compatibles mantienen el icono de tipo como alternativa.
 - Pendiente: confirmar reproducción y miniaturas en un dispositivo Android real; el soporte de códecs depende de la versión de Android y del archivo.
