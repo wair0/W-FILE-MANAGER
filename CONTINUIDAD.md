@@ -88,3 +88,21 @@ El artefacto descargable debe llamarse `WFILEMANAGER` y contener exactamente los
 - Recursos Android ubicados en los directorios correctos.
 - Compilación confirmada en la ejecución más reciente de GitHub Actions y artefactos descargables.
 - Pruebas funcionales documentadas, indicando qué se verificó en CI, emulador y dispositivo real.
+
+
+## Verificación de entrega — 2026-10-15
+
+- Se inspeccionó el workflow `.github/workflows/build.yml`: compila debug y release, ejecuta `node --check app/src/main/assets/www/app.js` y sube los dos entregables con `if-no-files-found: error`.
+- La ejecución `38699201417` terminó con conclusión `success`; el job `Build APK and source package` y sus pasos de validación JS, compilación, preparación y subida finalizaron correctamente.
+- El artefacto publicado se llama exactamente `WFILEMANAGER` y está asociado al commit `9ed3bac4448b3872de8ad12de08ea1496d414dec`, que incluye el cambio de nombre de artefacto `550da9c6b34e0f26f2f36f01660e9dc1b54a3815`.
+- Se descargó e inspeccionó el ZIP del artefacto: contiene directamente `WFILEMANAGER.APK` (2.546.604 bytes) y `WFILEMANAGER.zip` (252.683 bytes). No hay un ZIP adicional envolviendo los entregables.
+- Las comprobaciones de integridad ZIP finalizaron sin errores para el artefacto, el APK y el ZIP de fuentes. El APK contiene `AndroidManifest.xml`, archivos DEX y recursos `assets/www/`; el ZIP de fuentes contiene archivos Gradle y la interfaz web.
+- SHA-256 del APK inspeccionado: `5f71da0712947dd397101df38989874fd2e86fb8f15e3837623955263c408a11`.
+- El artefacto expira el 2026-10-29. Descarga desde [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) antes de esa fecha.
+- **Pendiente:** todavía no se ha confirmado por estas comprobaciones el `applicationId` extraído del manifiesto ni la firma mediante herramientas Android; tampoco se han realizado pruebas de instalación o uso en un dispositivo físico. La integridad del paquete y el éxito de CI no sustituyen esas pruebas.
+
+## Siguiente avance recomendado
+
+1. Validar `applicationId` y certificado de firma del APK generado con herramientas Android y registrar sus resultados.
+2. Ejecutar pruebas funcionales de instalación, permisos y operaciones de archivos en un dispositivo o emulador disponible; documentar por separado cada resultado.
+3. Revisar con pruebas específicas la extracción ZIP (entradas duplicadas, rutas maliciosas, archivos grandes y fallos parciales) y las operaciones de mover/copiar en destinos con permisos limitados.
