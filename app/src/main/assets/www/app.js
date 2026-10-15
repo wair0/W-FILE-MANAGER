@@ -229,20 +229,30 @@ function listHtml(items,o){
 /* --- Inicio --- */
 function ring(pct){const r=42,c=2*Math.PI*r,d=c*pct/100;return `<div class="ring"><svg viewBox="0 0 100 100"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><circle class="bgc" cx="50" cy="50" r="${r}" fill="none" stroke-width="8"/><circle class="fg" cx="50" cy="50" r="${r}" fill="none" stroke-width="8" stroke-dasharray="${d.toFixed(1)} ${c.toFixed(1)}"/></svg><b>${Math.round(pct)}%</b></div>`}
 function vHome(v){
-  const r0=S.roots[0];
+  const r0=S.roots[0],used=r0?r0.total-r0.free:0,pct=r0&&r0.total?used/r0.total*100:0;
+  const p=S.perm;
   v.innerHTML=`
-  <div class="stitle recent-home-title">Recientes<span class="sp"></span><button data-h="go:recent">VER TODO</button></div>
-  ${S.rec.length?`<div class="recent-strip">${S.rec.slice(0,12).map((it,i)=>`<button class="recent-card" data-ri="${i}"><div class="recent-thumb">${thumbOf(it)}</div><span>${esc(it.name)}</span><small>${fdt(it.mtime)}</small></button>`).join('')}</div>`:'<div class="empty recent-empty">SIN ACTIVIDAD RECIENTE</div>'}
+  <div class="card hero">${ring(pct)}<div style="flex:1;min-width:0"><h2>Almacenamiento interno</h2><div class="big">${r0?fsz(used):'—'} <small>/ ${r0?fsz(r0.total):'—'}</small></div>
+   <div class="bar"><i style="width:${pct}%"></i></div><div class="meta">LIBRE ${r0?fsz(r0.free):'—'} · ${p.all?'ACCESO TOTAL':'ACCESO LIMITADO'}</div></div></div>
   <div class="stitle">Acceso rápido</div>
   <div class="tiles">
    <button class="tile" data-h="cat:image">${ico('image','k-image')}Imágenes</button><button class="tile" data-h="cat:video">${ico('video','k-video')}Videos</button>
-   <button class="tile" data-h="cat:audio">${ico('music','k-audio')}Audio</button><button class="tile" data-h="dir:Download">${ico('download','k-text')}Descargas</button></div>
+   <button class="tile" data-h="cat:audio">${ico('music','k-audio')}Audio</button><button class="tile" data-h="cat:doc">${ico('doc','k-doc')}Docs</button>
+   <button class="tile" data-h="cat:apk">${ico('apk','k-apk')}APK</button><button class="tile" data-h="go:zip">${ico('zip','k-zip')}ZIP</button>
+   <button class="tile" data-h="dir:Download">${ico('download','k-text')}Descargas</button><button class="tile" data-h="dir:DCIM/Camera">${ico('image','k-folder')}Cámara</button></div>
+  <div class="stitle">Herramientas</div>
+  <div class="tools"><button class="tool" data-h="go:zip">${ico('zip','k-zip')}<b>Visor ZIP</b><span>Ver y extraer paquetes</span></button>
+   <button class="tool" data-h="newtxt">${ico('text','k-text')}<b>Editor TXT</b><span>Crear y editar texto</span></button>
+   <button class="tool" data-h="go:images">${ico('image','k-image')}<b>Galería</b><span>Visor de imágenes</span></button></div>
   <div class="stitle">Dispositivos</div>
   <div class="list">${S.roots.map((r,i)=>`<div class="row" data-r="${i}"><div class="thumb">${ico('hdd','k-doc')}</div><div class="info"><div class="nm">${esc(r.name)}</div>
    <div class="sub">${fsz(r.total-r.free)} usados de ${fsz(r.total)}</div><div class="bar" style="margin-top:6px"><i style="width:${r.total?(r.total-r.free)/r.total*100:0}%"></i></div></div>${ico('chev')}</div>`).join('')||'<div class="empty">Cargando…</div>'}</div>
-  ${S.favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${S.favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}`;
+  ${S.favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${S.favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}
+  <div class="stitle">Recientes<span class="sp"></span><button data-h="go:recent">VER TODO</button></div>
+  ${S.rec.length?`<div class="list">${S.rec.slice(0,5).map((it,i)=>rowHtml(it,i,{path:1})).join('')}</div>`:'<div class="empty" style="padding:22px">SIN ACTIVIDAD RECIENTE</div>'}
+  <div class="stitle">Permisos</div>
+  <div class="card" style="padding:6px 14px">${permRows()}${p.all?'':'<div style="padding:8px 0 10px"><button class="btn solid" data-h="perm">Conceder acceso total</button></div>'}</div>`;
   v.dataset.list='rec';
-  hydratePdfThumbs(v);
 }
 function permRows(){
   const p=S.perm,r=(t,ok)=>`<div class="pr">${ico('shield')}<span>${t}</span><span class="st ${ok?'ok':'no'}">${ok?'ACTIVO':'FALTA'}</span></div>`;
