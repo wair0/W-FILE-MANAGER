@@ -388,7 +388,7 @@ function vSettings(v){
    <div class="sw"><div>Ordenar por</div><div class="seg">${[['name','Nombre'],['date','Fecha'],['size','Tamaño'],['type','Tipo']].map(s=>`<button data-set="sort:${s[0]}" class="${S.sort===s[0]?'on':''}">${s[1]}</button>`).join('')}</div></div>
    <div class="sw"><div>Orden ascendente</div><div class="tg ${S.asc?'on':''}" data-set="asc"></div></div></div>
   <div class="stitle">Permisos de almacenamiento</div><div class="card" style="padding:6px 14px">${permRows()}<div style="padding:8px 0 10px"><button class="btn solid" data-h="perm">${S.perm.all?'Revisar permisos':'Conceder acceso total'}</button></div></div>
-  <div class="stitle">Datos</div><div class="btns"><button class="btn" data-set="clrrec">Borrar recientes</button><button class="btn" data-set="clrfav">Borrar favoritos</button></div>`;
+  <div class="stitle">Aplicación predeterminada</div><div class="card" style="padding:12px 14px"><p style="margin:4px 0 12px;color:var(--muted)">Solicita a Android establecer W File Manager como administrador de archivos predeterminado. La disponibilidad depende de la versión del sistema.</p><button class="btn solid" data-h="default-files">Establecer como predeterminado</button></div><div class="stitle">Datos</div><div class="btns"><button class="btn" data-set="clrrec">Borrar recientes</button><button class="btn" data-set="clrfav">Borrar favoritos</button></div>`;
   v.dataset.list='';
 }
 function vAbout(v){
@@ -472,7 +472,8 @@ function sortMenu(){sheet('Ordenar por',[['name','Nombre'],['date','Fecha'],['si
 
 /* ================= Reproductor multimedia integrado ================= */
 function openMedia(it,type){
-  const el=$('#viewer'),video=type==='video',src=furl(it.path);
+  if(type==='video'){api('playVideo',{path:it.path}).catch(fail);return}
+  const el=$('#viewer'),video=false,src=furl(it.path);
   el.hidden=false;el.classList.remove('hide-ui');
   el.innerHTML=`<div class="vtop"><button class="ib" data-media="close">${ico('back')}</button><span class="nm">${esc(it.name)}</span><button class="ib" data-media="external">${ico('ext')}</button></div>
     <div class="media-stage ${video?'video-stage':'audio-stage'}">
@@ -481,8 +482,13 @@ function openMedia(it,type){
       <p id="media-error" class="media-error" hidden>No se pudo reproducir este formato en el reproductor integrado. Puedes abrirlo con otra aplicación.</p>
     </div>`;
   const media=$('#media-element'),err=$('#media-error');
-  media.addEventListener('error',()=>{err.hidden=false});
-  media.addEventListener('loadedmetadata',()=>{err.hidden=true});
+  const notify=playing=>{try{if(window.WBridge&&WBridge.mediaNotification)WBridge.mediaNotification(it.name,!!playing,media.duration&&isFinite(media.duration)?Math.round(media.duration*1000):0,media.currentTime?Math.round(media.currentTime*1000):0)}catch(_){}};
+  media.addEventListener('error',()=>{err.hidden=false;notify(false)});
+  media.addEventListener('loadedmetadata',()=>{err.hidden=true;notify(!media.paused)});
+  media.addEventListener('play',()=>notify(true));
+  media.addEventListener('pause',()=>notify(false));
+  media.addEventListener('ended',()=>{notify(false);try{if(window.WBridge)WBridge.mediaNotification(it.name,false,0,0)}catch(_){}});
+  media.addEventListener('timeupdate',()=>{if(Math.floor(media.currentTime)%5===0)notify(!media.paused)});
   media.play().catch(()=>{});
   el.querySelector('[data-media="close"]').onclick=closeViewer;
   el.querySelector('[data-media="external"]').onclick=()=>api('open',{path:it.path}).catch(fail);
@@ -580,7 +586,7 @@ view.addEventListener('click',async e=>{
     if(h.startsWith('go:'))return go(h.slice(3));
     if(h.startsWith('dir:')){const p=root()+'/'+h.slice(4);return openPath(p)}
     if(h==='newtxt')return openEditor(null,root()+'/Documents');
-    if(h==='perm'){await api('reqPerm');return setTimeout(async()=>{await refreshPerm();render()},600)}return}
+    if(h==='perm'){await api('reqPerm');return setTimeout(async()=>{await refreshPerm();render()},600)}if(h==='default-files'){return api('requestDefaultFileManager',{}).catch(fail)}return}
   if(b=t.closest('[data-r]')){return openPath(S.roots[+b.dataset.r].path)}
   if(b=t.closest('[data-f]')){const p=S.favs[+b.dataset.f];return openFav(p)}
   if(b=t.closest('[data-z]')){const a=b.dataset.z;
@@ -662,7 +668,9 @@ window.WFM={
     if(S.sec!=='home'){go('home');return true}
     return false;
   },
-  async onResume(){await refreshPerm();if(S.perm.all){if(S.sec==='home')loadHome();else if(S.reload)S.reload()}}
+  async onResume(){await refreshPerm();if(S.perm.all){if(S.sec==='home')loadHome();else if(S.reload)S.reload()}},
+  mediaCommand(command){const media=$('#media-element');if(!media)return;if(command==='pause')media.pause();else if(command==='play')media.play().catch(()=>{})},
+  requestDefaultFileManager(){return api('requestDefaultFileManager',{}).catch(fail)}
 };
 
 /* ================= Arranque ================= */
