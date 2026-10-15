@@ -6,7 +6,7 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 - Header con botón hamburguesa y menú lateral con todas las secciones, menú contextual y barra inferior.
 - Inicio con almacenamiento, accesos rápidos, herramientas, dispositivos, favoritos, recientes y estado de permisos.
 - Explorador con lista/cuadrícula, migas de pan, ordenar, buscar, selección múltiple, copiar/mover/pegar, renombrar, eliminar, carpetas, propiedades, favoritos, compartir, abrir con y archivos ocultos.
-- Visor y extractor ZIP, vista previa de texto/imágenes, extracción completa o selectiva con protección contra zip-slip y creación de ZIP.
+- Visor y extractor ZIP, vista previa de texto/imágenes, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP.
 - Visor/editor/creador TXT con números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente y guardar/guardar como.
 - Visor de imágenes con galería, zoom, cambio por deslizamiento, compartir y eliminar.
 - Permisos de almacenamiento adaptados a la versión de Android.
@@ -32,6 +32,11 @@ app/src/main/assets/www/                index.html · app.css · app.js (interfa
 app/src/main/res/                       tema, FileProvider e icono adaptativo
 preview/                                mock + script para vista previa HTML
 ```
+
+## Seguridad y funcionamiento offline
+- La WebView bloquea las solicitudes de recursos HTTP/HTTPS; la interfaz y sus recursos se cargan localmente.
+- La extracción ZIP valida las rutas canónicas para evitar zip-slip y no sobrescribe archivos existentes en el destino.
+- El APK de entrega se firma con la clave debug para facilitar pruebas e instalación directa. Para distribución pública o actualizaciones consistentes, debe configurarse una clave release propia y protegida.
 
 ## Permisos y límites de Android
 - En Android 11+ el acceso total se concede desde **Ajustes → Acceso a todos los archivos**.
