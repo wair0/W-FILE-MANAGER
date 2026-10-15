@@ -15,9 +15,18 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.media.MediaMetadataRetriever
-import android.widget.MediaController
 import android.widget.FrameLayout
-import android.widget.VideoView
+import android.widget.ImageButton
+import android.widget.TextView
+import android.view.Gravity
+import android.view.View
+import android.content.pm.ActivityInfo
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import android.widget.Toast
 import android.os.ParcelFileDescriptor
 import android.util.Base64
@@ -316,54 +325,138 @@ class MainActivity : AppCompatActivity() {
         val file = File(path)
         if (!file.isFile || !file.canRead()) throw IllegalArgumentException("Vídeo no disponible")
         runOnUiThread {
+            var player: ExoPlayer? = null
+            var fullScreen = false
+            val previousOrientation = requestedOrientation
+            var dialog: Dialog? = null
             try {
-                val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
-                val container = FrameLayout(this).apply {
+                val d = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+                dialog = d
+                val root = FrameLayout(this).apply {
                     setBackgroundColor(Color.BLACK)
-                    // Un contenedor explícito garantiza que el SurfaceView de VideoView
-                    // tenga tamaño y ventana válidos antes de iniciar la decodificación.
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                    )
+                    keepScreenOn = true
                 }
-                val video = VideoView(this).apply {
+                val playerView = PlayerView(this).apply {
                     setBackgroundColor(Color.BLACK)
-                    setZOrderOnTop(false)
-                    isFocusable = true
-                    isFocusableInTouchMode = true
+                    useController = true
+                    controllerAutoShow = true
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    keepScreenOn = true
+                    contentDescription = "Reproductor de vídeo"
                 }
-                val controller = MediaController(this)
-                controller.setAnchorView(video)
-                video.setMediaController(controller)
-                container.addView(video, FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                root.addView(playerView, FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
                 ))
-                dialog.setContentView(container)
-                video.setOnPreparedListener { player ->
-                    player.isLooping = false
-                    video.requestFocus()
-                    // Algunos dispositivos no pintan el primer fotograma hasta que se
-                    // posiciona el decodificador en el inicio del archivo.
-                    video.seekTo(1)
-                    video.start()
-                    controller.show(2500)
+
+                // Botón siempre accesible para alternar pantalla completa apaisada.
+                val fullScreenButton = TextView(this).apply {
+                    text = "⛶"
+                    textSize = 28f
+                    setTextColor(Color.WHITE)
+                    gravity = Gravity.CENTER
+                    setBackgroundColor(Color.argb(150, 18, 24, 38))
+                    contentDescription = "Alternar pantalla completa"
+                    isClickable = true
+                    isFocusable = true
+                    setPadding(dp(10), dp(4), dp(10), dp(4))
                 }
-                video.setOnErrorListener { _, what, extra ->
-                    Toast.makeText(this, "No se pudo reproducir este vídeo (error $what/$extra). Comprueba que el archivo esté íntegro y usa MP4 H.264/AAC o prueba otra aplicación.", Toast.LENGTH_LONG).show()
-                    dialog.dismiss()
-                    true
+                val buttonParams = FrameLayout.LayoutParams(dp(52), dp(48), Gravity.TOP or Gravity.END).apply {
+                    topMargin = dp(12)
+                    marginEnd = dp(12)
                 }
-                dialog.setOnDismissListener { video.stopPlayback() }
-                dialog.show()
-                // setVideoPath usa Uri.parse(path); una ruta absoluta sin esquema puede
-                // fallar en algunos dispositivos. Uri.fromFile genera una URI file:// válida.
-                video.setVideoURI(Uri.fromFile(file))
+                root.addView(fullScreenButton, buttonParams)
+
+                fullScreenButton.setOnClickListener {
+                    fullScreen = !fullScreen
+                    if (fullScreen) {
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            d.window?.insetsController?.hide(
+                                android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars()
+                            )
+                            d.window?.insetsController?.systemBarsBehavior =
+                                android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        } else {
+                            @Suppress("DEPRECATION")
+                            d.window?.decorView?.systemUiVisibility = (
+                                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            )
+                        }
+                        fullScreenButton.text = "⤢"
+                    } else {
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            d.window?.insetsController?.show(
+                                android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars()
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            d.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                        }
+                        requestedOrientation = previousOrientation
+                        fullScreenButton.text = "⛶"
+                    }
+                }
+
+                val exo = ExoPlayer.Builder(this).build()
+                player = exo
+                playerView.player = exo
+                exo.addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        val detail = error.errorCodeName ?: "error de decodificación"
+                        Toast.makeText(
+                            this@MainActivity,
+                            "No se pudo decodificar el vídeo ($detail). Prueba un MP4 H.264/AAC o verifica que el archivo no esté dañado.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                })
+                d.setContentView(root)
+                d.setOnDismissListener {
+                    try { exo.stop() } catch (_: Exception) {}
+                    exo.release()
+                    if (fullScreen) {
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            d.window?.insetsController?.show(
+                                android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars()
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            d.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                        }
+                    }
+                    requestedOrientation = previousOrientation
+                }
+                d.setOnKeyListener { _, keyCode, event ->
+                    if (keyCode == android.view.KeyEvent.KEYCODE_BACK && event.action == android.view.KeyEvent.ACTION_UP && fullScreen) {
+                        fullScreenButton.performClick()
+                        true
+                    } else false
+                }
+                d.show()
+                d.window?.setLayout(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                // ExoPlayer lee el archivo local directamente y decodifica por MediaCodec;
+                // no depende del SurfaceView de VideoView ni del pipeline multimedia de WebView.
+                exo.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
+                exo.prepare()
+                exo.playWhenReady = true
             } catch (t: Throwable) {
-                Toast.makeText(this, "No se pudo abrir el vídeo: " + t.message, Toast.LENGTH_LONG).show()
+                try { player?.release() } catch (_: Exception) {}
+                try { dialog?.dismiss() } catch (_: Exception) {}
+                Toast.makeText(this, "No se pudo abrir el vídeo: " + (t.message ?: t.javaClass.simpleName), Toast.LENGTH_LONG).show()
             }
         }
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun createMediaNotificationChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
