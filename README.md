@@ -108,9 +108,8 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - Pendiente: confirmar reproducción y miniaturas en un dispositivo Android real; el soporte de códecs depende de la versión de Android y del archivo.
 
 
-## Reproductor de vídeo, notificación de audio y app predeterminada
+## Reproductor de vídeo y notificación de audio
 
 - Los vídeos se reproducen con el reproductor nativo de Android `VideoView`, con controles integrados; los formatos/códecs que Android no soporte pueden mostrar un error y requerir otra app.
 - La reproducción de audio integrada informa el título y el estado a una notificación con control de reproducir/pausar. En Android 13 o superior, el usuario debe conceder el permiso de notificaciones.
-- En Ajustes se puede solicitar a Android el rol de administrador de archivos predeterminado. El sistema solo lo concede si la versión y sus criterios de elegibilidad lo permiten y el usuario acepta.
 - Pendiente de prueba en dispositivo real; los flujos dependen de la versión de Android y los códecs disponibles.
