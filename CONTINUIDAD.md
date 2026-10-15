@@ -231,3 +231,14 @@ Enlaces:
   - [20a14ed](https://github.com/wair0/W-FILE-MANAGER/commit/20a14edce410290a300fde460ab1e0478baa9b17) — conexión de controles a la cola de audio.
   - [cce61e6](https://github.com/wair0/W-FILE-MANAGER/commit/cce61e67e052ea0e39c1bc803dbe4d4502c4ce6c) — mantener controles al pausar.
 - Pendiente: revisar CI y validar en Android físico/emulador los cuatro controles, incluyendo notificación contraída/expandida y permisos de notificaciones.
+
+
+## Reproductor de vídeo interno: corrección de pantalla negra (2026-10-15)
+
+- Se sustituyó `VideoView` por AndroidX Media3 ExoPlayer en `MainActivity.kt`; el archivo local se entrega como URI `file://` directamente al reproductor nativo, sin depender del reproductor externo ni del motor de vídeo HTML de WebView.
+- Se añadió `media3-exoplayer` y `media3-ui` versión 1.5.1 en `app/build.gradle.kts`.
+- El reproductor tiene controles integrados y botón para entrar/salir de pantalla completa apaisada e inmersiva. Al salir, restaura la orientación previa y libera ExoPlayer.
+- Commits:
+  - [5c86cf0](https://github.com/wair0/W-FILE-MANAGER/commit/5c86cf04db256b02f44579d353394dd88b5e65b9) — sustituir VideoView por Media3.
+  - [2bf2d4a](https://github.com/wair0/W-FILE-MANAGER/commit/2bf2d4a83704c63a638883d8c711016cbef08def) — dependencias Media3.
+- Pendiente: confirmar CI y probar con varios vídeos en el Android afectado. Si un archivo usa un códec que el dispositivo no soporta, el reproductor mostrará el error de decodificación.
