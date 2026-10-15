@@ -57,6 +57,17 @@ class MainActivity : AppCompatActivity() {
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                     val u = request.url
                     if (u.host == "wfile.local") return serveFile(u)
+                    // La interfaz es offline: impedir que scripts, estilos o imágenes carguen recursos de red.
+                    if (u.scheme == "http" || u.scheme == "https") {
+                        return WebResourceResponse(
+                            "text/plain",
+                            "UTF-8",
+                            403,
+                            "Blocked by offline policy",
+                            mapOf("Cache-Control" to "no-store"),
+                            java.io.ByteArrayInputStream(ByteArray(0))
+                        )
+                    }
                     return null
                 }
 
