@@ -501,12 +501,29 @@ let lpT=null,lpFired=false;
 const view=$('#view');
 function itemFromEl(el){const r=el.closest('[data-i]');if(!r)return null;const i=+r.dataset.i;const src=view.dataset.list==='rec'?S.rec:(view.dataset.list==='txt'?S.items:S.items);return {it:src[i],i,src}}
 view.addEventListener('pointerdown',e=>{
-  const r=e.target.closest('[data-i]');if(!r||e.target.closest('[data-m]')||view.dataset.list!=='items')return;lpFired=false;
-  lpT=setTimeout(()=>{const x=itemFromEl(r);if(!x||!x.it)return;lpFired=true;S.sel.add(x.it.path);render();navigator.vibrate&&navigator.vibrate(15)},450);
+  const r=e.target.closest('[data-i]');
+  if(!r||e.target.closest('[data-m]')||view.dataset.list!=='items')return;
+  lpFired=false;
+  clearTimeout(lpT);
+  lpT=setTimeout(()=>{
+    const x=itemFromEl(r);
+    if(!x||!x.it)return;
+    lpFired=true;
+    itemMenu(x.it);
+    if(navigator.vibrate)navigator.vibrate(18);
+  },480);
 });
 ['pointerup','pointercancel','pointerleave'].forEach(t=>view.addEventListener(t,()=>clearTimeout(lpT)));
 view.addEventListener('scroll',()=>clearTimeout(lpT),{passive:true});
-view.addEventListener('contextmenu',e=>{if(e.target.closest('[data-i]'))e.preventDefault()});
+view.addEventListener('contextmenu',e=>{
+  const r=e.target.closest('[data-i]');
+  if(!r)return;
+  e.preventDefault();
+  if(!lpFired){
+    const x=itemFromEl(r);
+    if(x&&x.it)itemMenu(x.it);
+  }
+});
 
 view.addEventListener('click',async e=>{
   const t=e.target;
