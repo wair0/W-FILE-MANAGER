@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.media.MediaMetadataRetriever
 import android.os.ParcelFileDescriptor
@@ -272,11 +273,42 @@ class MainActivity : AppCompatActivity() {
         "zipExtract" -> FileOps.zipExtract(a.getString("path"), a.getString("dest"), a.optJSONArray("entries"))
         "zipCreate" -> FileOps.zipCreate(a.getJSONArray("paths"), a.getString("dest"), a.getString("name"))
         "open" -> { openFile(a.getString("path")); true }
+        "imageThumbnail" -> imageThumbnail(a.getString("path"))
         "pdfThumbnail" -> pdfThumbnail(a.getString("path"))
         "videoThumbnail" -> videoThumbnail(a.getString("path"))
         "zipInstallApk" -> { installApkFromZip(a.getString("path"), a.getString("entry")); true }
         "share" -> { shareFiles(a.getJSONArray("paths")); true }
         else -> throw IllegalArgumentException("Método desconocido: $m")
+    }
+
+    private fun imageThumbnail(path: String): JSONObject {
+        val file = File(path)
+        if (!file.isFile || !file.canRead()) throw IllegalArgumentException("Imagen no disponible")
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            throw IllegalArgumentException("Formato de imagen no compatible")
+        }
+        var sample = 1
+        while (bounds.outWidth / sample > 640 || bounds.outHeight / sample > 640) sample *= 2
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply {
+            inSampleSize = sample
+            inPreferredConfig = Bitmap.Config.RGB_565
+        }) ?: throw IllegalArgumentException("No se pudo generar la miniatura de imagen")
+        return try {
+            val width = 320
+            val height = maxOf(1, (width.toFloat() * bitmap.height / bitmap.width).toInt())
+            val scaled = Bitmap.createScaledBitmap(bitmap, width, height, true)
+            if (scaled !== bitmap) bitmap.recycle()
+            ByteArrayOutputStream().use { out ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, 78, out)
+                scaled.recycle()
+                JSONObject().put("b64", Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP))
+            }
+        } catch (t: Throwable) {
+            if (!bitmap.isRecycled) bitmap.recycle()
+            throw t
+        }
     }
 
     private fun pdfThumbnail(path: String): JSONObject {
