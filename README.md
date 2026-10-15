@@ -7,7 +7,7 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 - Header con botón hamburguesa, menú lateral, menú contextual y barra inferior.
 - Inicio simplificado con recientes horizontales, accesos rápidos, dispositivos y favoritos.
 - Explorador con lista/cuadrícula, migas de pan, ordenar, buscar, selección múltiple, copiar/mover/pegar, renombrar, eliminar, carpetas, propiedades, favoritos, compartir, abrir con y archivos ocultos.
-- Visor y extractor ZIP, vista previa de entradas, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP.
+- Visor y extractor ZIP, vista previa de entradas, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP. W FILE MANAGER puede elegirse en «Abrir con» para abrir ZIP recibidos desde Chrome u otras aplicaciones.
 - Instalación de APK directamente desde dentro de un ZIP: al tocar una entrada `.apk`, se prepara una copia temporal privada y se abre el instalador de Android, sin extraerla manualmente a una carpeta visible. Android puede pedir autorización para instalar desde esta fuente.
 - Miniaturas de video generadas localmente a partir de un fotograma del archivo; si el video o su códec no permite decodificar un fotograma, se conserva el icono de video.
 - Visor/editor/creador TXT con números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente y guardar/guardar como.
@@ -129,3 +129,11 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - El reproductor conserva controles integrados y agrega un botón **⛶** para alternar pantalla completa apaisada, ocultando las barras del sistema; al salir o cerrar se restaura la orientación anterior y se libera el decodificador.
 - La app muestra un error de decodificación si el dispositivo no admite el códec del archivo; ningún reproductor puede garantizar formatos/códecs que el dispositivo no soporte.
 - La compilación de CI debe confirmar la integración de Media3. Falta validar reproducción real en el dispositivo donde se observó la pantalla negra.
+
+
+### Abrir ZIP descargados desde Chrome (2026-10-15)
+
+- Se registraron filtros Android `ACTION_VIEW` para los MIME habituales de ZIP, de modo que W FILE MANAGER pueda aparecer en el selector «Abrir con» junto a Google Files.
+- Al seleccionar la app, el archivo recibido se copia con un nombre seguro y sin sobrescribir descargas existentes; si está disponible el acceso a todos los archivos, queda en Descargas. Después se abre directamente en el visor ZIP integrado.
+- Si todavía no se concedió acceso a todos los archivos, la copia temporal queda en el almacenamiento privado de la app; la extracción debe dirigirse a una carpeta accesible.
+- Pendiente de validar con un ZIP descargado desde Chrome en un dispositivo Android real, incluyendo «Solo una vez» y «Siempre».
