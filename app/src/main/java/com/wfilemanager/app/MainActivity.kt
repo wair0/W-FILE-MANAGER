@@ -10,6 +10,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.provider.OpenableColumns
 import android.graphics.Color
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity() {
     private val pool = Executors.newFixedThreadPool(4)
     private val mediaNotificationId = 4107
     private val mediaChannelId = "wfm_audio_playback"
+    @Volatile private var handledIncomingUri: String? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,6 +83,11 @@ class MainActivity : AppCompatActivity() {
             }
             webChromeClient = WebChromeClient()
             webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView, url: String) {
+                    super.onPageFinished(view, url)
+                    handleIncomingFileIntent(intent)
+                }
+
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                     val u = request.url
                     if (u.host == "wfile.local") return serveFile(u, request.requestHeaders)
@@ -126,6 +133,71 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         intent.getStringExtra("wfm_media_command")?.let { command ->
             web.postDelayed({ web.evaluateJavascript("window.WFM && WFM.mediaCommand && WFM.mediaCommand(" + JSONObject.quote(command) + ")", null) }, 250)
+        }
+        handleIncomingFileIntent(intent)
+    }
+
+    /**
+     * Imports a ZIP opened by Chrome/another app, then asks the WebView ZIP viewer to open it.
+     * Prefer the public Downloads folder so extraction defaults to a user-accessible location.
+     */
+    private fun handleIncomingFileIntent(sourceIntent: Intent?) {
+        if (sourceIntent?.action != Intent.ACTION_VIEW) return
+        val uri = sourceIntent.data ?: return
+        val key = uri.toString()
+        synchronized(this) {
+            if (handledIncomingUri == key) return
+            handledIncomingUri = key
+        }
+        pool.execute {
+            try {
+                val displayName = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                    ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+                    ?.takeIf { it.isNotBlank() }
+                    ?: uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':')
+                    ?: "download.zip"
+                val safeName = File(displayName).name.let {
+                    if (it.lowercase().endsWith(".zip")) it else throw IllegalArgumentException("El archivo recibido no parece ser un ZIP")
+                }
+                val downloads = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath)
+                val canUseDownloads = (Build.VERSION.SDK_INT >= 30 && Environment.isExternalStorageManager()) ||
+                    (Build.VERSION.SDK_INT < 30 && downloads.canWrite())
+                val destinationDir = if (canUseDownloads) downloads else File(cacheDir, "incoming-zips")
+                if (!destinationDir.exists() && !destinationDir.mkdirs()) {
+                    throw IllegalStateException("No se pudo preparar la carpeta para abrir el ZIP")
+                }
+                var destination = File(destinationDir, safeName)
+                var suffix = 1
+                while (destination.exists()) {
+                    val stem = safeName.removeSuffix(".zip")
+                    destination = File(destinationDir, "$stem ($suffix).zip")
+                    suffix++
+                }
+                val input = if (uri.scheme == "file") {
+                    val source = File(uri.path ?: throw IllegalArgumentException("Ruta del ZIP no válida"))
+                    FileInputStream(source)
+                } else {
+                    contentResolver.openInputStream(uri) ?: throw IllegalStateException("Chrome no permitió leer el archivo descargado")
+                }
+                input.use { ins -> destination.outputStream().buffered().use { out -> ins.copyTo(out) } }
+                if (destination.length() == 0L) {
+                    destination.delete()
+                    throw IllegalArgumentException("El ZIP descargado está vacío")
+                }
+                runOnUiThread {
+                    if (!isDestroyed) {
+                        web.evaluateJavascript(
+                            "window.WFM && WFM.openExternalZip && WFM.openExternalZip(" + JSONObject.quote(destination.absolutePath) + ")",
+                            null
+                        )
+                    }
+                }
+            } catch (t: Throwable) {
+                synchronized(this) { if (handledIncomingUri == key) handledIncomingUri = null }
+                runOnUiThread {
+                    if (!isDestroyed) Toast.makeText(this, t.message ?: "No se pudo abrir el ZIP recibido", Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 
