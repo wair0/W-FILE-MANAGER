@@ -10,6 +10,8 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 - Visor y extractor ZIP, vista previa de texto/imágenes, extracción completa o selectiva con protección contra zip-slip y contra sobrescritura accidental de archivos existentes, y creación de ZIP.
 - Visor/editor/creador TXT con números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente y guardar/guardar como.
 - Visor de imágenes con galería, zoom, cambio por deslizamiento, compartir y eliminar.
+- Reproductores integrados de audio y vídeo desde el almacenamiento local, con controles nativos, búsqueda dentro del archivo y apertura/compartición externa.
+- Inicio con archivos recientes en carrusel horizontal, accesos rápidos y resumen de almacenamiento; el historial guardado se valida para evitar que datos antiguos dañen la pantalla.
 - Permisos de almacenamiento adaptados a la versión de Android.
 
 ## Identidad y entregables
@@ -43,7 +45,8 @@ preview/                                mock + script para vista previa HTML
 
 ## Seguridad y funcionamiento offline
 
-- La WebView bloquea solicitudes de recursos HTTP/HTTPS; la interfaz y sus recursos se cargan localmente.
+- La interfaz, CSS y JavaScript se cargan desde assets locales. La URL interna `wfile.local` solo sirve archivos del almacenamiento local; no habilita navegación web externa.
+- El servidor local de archivos admite solicitudes HTTP Range (206 Partial Content), necesarias para la reproducción y el avance dentro de audio/vídeo en WebView.
 - La extracción ZIP valida rutas canónicas para evitar zip-slip y no sobrescribe archivos existentes en el destino.
 - La vista previa de entradas ZIP limita la lectura de datos cuyo tamaño no está declarado.
 - La comprobación de sintaxis JavaScript forma parte del proceso de CI.
