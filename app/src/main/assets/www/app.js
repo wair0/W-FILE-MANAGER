@@ -489,7 +489,7 @@ function openMedia(it,type){
 }
 /* ================= Visor de imágenes ================= */
 const V={list:[],i:0,s:1,x:0,y:0,ui:true};
-function openViewer(list,i){function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
+function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
 function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML=''}
 function vSrc(it){return it.src||furl(it.path)}
 function drawViewer(){
