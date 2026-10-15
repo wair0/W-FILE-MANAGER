@@ -111,5 +111,13 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 ## Reproductor de vídeo y notificación de audio
 
 - Los vídeos se reproducen con el reproductor nativo de Android `VideoView`, con controles integrados; los formatos/códecs que Android no soporte pueden mostrar un error y requerir otra app.
-- La reproducción de audio integrada informa el título y el estado a una notificación con control de reproducir/pausar. En Android 13 o superior, el usuario debe conceder el permiso de notificaciones.
+- La reproducción de audio integrada informa el título y el estado a una notificación con controles de anterior, reproducir/pausar, siguiente y cerrar. Anterior/siguiente recorren los archivos de audio de la lista desde la que se abrió la pista; en la vista expandida de la notificación pueden aparecer todos los controles. En Android 13 o superior, el usuario debe conceder el permiso de notificaciones.
 - Pendiente de prueba en dispositivo real; los flujos dependen de la versión de Android y los códecs disponibles.
+
+
+### Controles de audio en segundo plano (2026-10-15)
+
+- La notificación de audio ahora incluye **Anterior**, **Reproducir/Pausar**, **Siguiente** y **Cerrar**.
+- Anterior/siguiente recorren la lista de archivos de audio disponible en la vista desde la que se abrió la pista; al finalizar una pista, la reproducción avanza a la siguiente cuando existe.
+- Se mantiene la notificación al pausar al inicio de una pista. Solo la acción explícita **Cerrar** elimina la notificación y cierra el reproductor integrado.
+- Pendiente: validar los botones en Android real y confirmar el comportamiento de notificaciones en Android 13+ con permiso concedido y denegado.
