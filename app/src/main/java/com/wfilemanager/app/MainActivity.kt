@@ -11,6 +11,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.media.MediaMetadataRetriever
+import android.media.MediaController
+import android.widget.FrameLayout
+import android.widget.VideoView
+import android.widget.Toast
 import android.os.ParcelFileDescriptor
 import android.util.Base64
 import java.io.ByteArrayOutputStream
@@ -29,6 +33,7 @@ import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import org.json.JSONArray
@@ -41,6 +46,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private val pool = Executors.newFixedThreadPool(4)
+    private val mediaNotificationId = 4107
+    private val mediaChannelId = "wfm_audio_playback"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,6 +96,7 @@ class MainActivity : AppCompatActivity() {
             WebView.setWebContentsDebuggingEnabled(true)
         }
         setContentView(web)
+        createMediaNotificationChannel()
         web.loadUrl("file:///android_asset/www/index.html")
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -98,6 +106,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra("wfm_media_command")?.let { command ->
+            web.postDelayed({ web.evaluateJavascript("window.WFM && WFM.mediaCommand && WFM.mediaCommand(" + JSONObject.quote(command) + ")", null) }, 250)
+        }
     }
 
     override fun onResume() {
@@ -232,6 +248,11 @@ class MainActivity : AppCompatActivity() {
 
     inner class Bridge {
         @JavascriptInterface
+        fun mediaNotification(title: String, playing: Boolean, duration: Long, position: Long) {
+            runOnUiThread { updateMediaNotification(title, playing, duration, position) }
+        }
+
+        @JavascriptInterface
         fun call(id: Int, method: String, args: String) {
             pool.execute {
                 val res = JSONObject()
@@ -273,12 +294,115 @@ class MainActivity : AppCompatActivity() {
         "zipExtract" -> FileOps.zipExtract(a.getString("path"), a.getString("dest"), a.optJSONArray("entries"))
         "zipCreate" -> FileOps.zipCreate(a.getJSONArray("paths"), a.getString("dest"), a.getString("name"))
         "open" -> { openFile(a.getString("path")); true }
+        "playVideo" -> { playVideo(a.getString("path")); true }
+        "mediaNotification" -> { updateMediaNotification(a.optString("title", "Audio"), a.optBoolean("playing"), a.optLong("duration"), a.optLong("position")); true }
+        "requestDefaultFileManager" -> { requestDefaultFileManager(); true }
         "imageThumbnail" -> imageThumbnail(a.getString("path"))
         "pdfThumbnail" -> pdfThumbnail(a.getString("path"))
         "videoThumbnail" -> videoThumbnail(a.getString("path"))
         "zipInstallApk" -> { installApkFromZip(a.getString("path"), a.getString("entry")); true }
         "share" -> { shareFiles(a.getJSONArray("paths")); true }
         else -> throw IllegalArgumentException("Método desconocido: $m")
+    }
+
+    private fun playVideo(path: String) {
+        val file = File(path)
+        if (!file.isFile || !file.canRead()) throw IllegalArgumentException("Vídeo no disponible")
+        runOnUiThread {
+            try {
+                val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+                val video = VideoView(this)
+                video.setBackgroundColor(Color.BLACK)
+                val controller = MediaController(this)
+                controller.setAnchorView(video)
+                video.setMediaController(controller)
+                dialog.setContentView(video, FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                ))
+                video.setOnPreparedListener { player ->
+                    player.isLooping = false
+                    video.start()
+                    controller.show(2500)
+                }
+                video.setOnErrorListener { _, what, extra ->
+                    Toast.makeText(this, "No se pudo reproducir este vídeo (error $what/$extra). Prueba con MP4 H.264/AAC o con otra aplicación.", Toast.LENGTH_LONG).show()
+                    dialog.dismiss()
+                    true
+                }
+                dialog.setOnDismissListener { if (video.isPlaying) video.stopPlayback() }
+                dialog.show()
+                video.setVideoPath(file.absolutePath)
+            } catch (t: Throwable) {
+                Toast.makeText(this, "No se pudo abrir el vídeo: " + t.message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun createMediaNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(NotificationChannel(
+                mediaChannelId, "Reproducción de audio", NotificationManager.IMPORTANCE_LOW
+            ).apply { description = "Controles de audio de W File Manager" })
+        }
+    }
+
+    private fun updateMediaNotification(title: String, playing: Boolean, duration: Long, position: Long) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            if (playing) ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4108)
+            return
+        }
+        val command = if (playing) "pause" else "play"
+        val actionIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("wfm_media_command", command)
+        }
+        val actionPending = PendingIntent.getActivity(
+            this, if (playing) 4109 else 4110, actionIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val builder = NotificationCompat.Builder(this, mediaChannelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title.ifBlank { "Audio" })
+            .setContentText(if (playing) "Reproduciendo · W File Manager" else "En pausa · W File Manager")
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOnlyAlertOnce(true)
+            .setOngoing(playing)
+            .setContentIntent(PendingIntent.getActivity(
+                this, 4111, Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
+            .addAction(
+                if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                if (playing) "Pausar" else "Reproducir",
+                actionPending
+            )
+        if (!playing && position <= 0L) {
+            getSystemService(NotificationManager::class.java).cancel(mediaNotificationId)
+        } else {
+            getSystemService(NotificationManager::class.java).notify(mediaNotificationId, builder.build())
+        }
+    }
+
+    private fun requestDefaultFileManager() {
+        if (Build.VERSION.SDK_INT >= 29) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_FILES)) {
+                if (!roleManager.isRoleHeld(RoleManager.ROLE_FILES)) {
+                    startActivityForResult(roleManager.createRequestRoleIntent(RoleManager.ROLE_FILES), 4112)
+                } else {
+                    Toast.makeText(this, "W File Manager ya es el administrador de archivos predeterminado.", Toast.LENGTH_LONG).show()
+                }
+                return
+            }
+        }
+        try {
+            startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+        } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
+        }
     }
 
     private fun imageThumbnail(path: String): JSONObject {
