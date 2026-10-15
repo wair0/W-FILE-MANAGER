@@ -145,3 +145,43 @@ El artefacto instalable `WFILEMANAGER` debe contener únicamente `WFILEMANAGER.A
 ### Validación pendiente
 - Confirmar en el dispositivo que Inicio vuelve a su aspecto y comportamiento original.
 - Probar MP4 y MP3 locales. Algunos archivos MKV/AVI u otros contenedores pueden depender de códecs que Android/WebView no incluye; en esos casos el mensaje debe indicar incompatibilidad y se puede usar «Abrir con…».
+
+
+## Actualización de continuidad — 2026-10-15
+
+### Instalar APK desde dentro de un ZIP
+- En el visor ZIP, tocar una entrada con extensión `.apk` invoca la acción nativa `zipInstallApk`.
+- `MainActivity.kt` localiza la entrada en el ZIP y copia el contenido a un archivo temporal dentro de `cacheDir/zip-apk`; no lo extrae a una carpeta visible del almacenamiento del usuario.
+- Se rechazan entradas que no sean archivos APK y se limita la copia a 700 MB.
+- El archivo temporal se comparte con el instalador de Android mediante `FileProvider`, MIME `application/vnd.android.package-archive` y permiso de lectura URI.
+- Android sigue controlando la instalación y puede pedir que el usuario autorice instalaciones desde esta fuente.
+- Pendiente: probar en dispositivo/emulador APK válido, APK inválido, entrada en subcarpeta, archivo grande, cancelación y limpieza de archivos temporales. Abrir el instalador no equivale a confirmar que la instalación finalizó correctamente.
+
+### Miniaturas de video
+- Se añadió el puente nativo `videoThumbnail` en `MainActivity.kt`, basado en `MediaMetadataRetriever`, para extraer un fotograma local y devolverlo como JPEG Base64.
+- En `app.js`, `thumbOf()` crea la imagen `data-video` para archivos de tipo video y `hydrateVideoThumbs()` carga la miniatura bajo demanda en las vistas que usan este componente.
+- Si no se puede decodificar un fotograma, se conserva el icono de video. La generación es local y no depende de API externas.
+- Pendiente: probar distintos formatos y tamaños, archivos dañados y códecs no compatibles; confirmar que la interfaz sigue fluida y que el fallback se ve correctamente.
+
+### Commits de esta actualización
+- `a0289cc` — `ADD VIDEO THUMBNAILS AND INSTALL APK FROM ZIP` (interfaz JavaScript).
+- `44ed4c8` — `ADD ZIP APK INSTALLER AND VIDEO THUMBNAIL BRIDGE` (funciones Kotlin).
+- `cfe990e` — `ALLOW FILE PROVIDER TO SHARE TEMP APK CACHE` (ruta de caché en FileProvider).
+
+Enlaces:
+- https://github.com/wair0/W-FILE-MANAGER/commit/a0289cc8d279887ec92dd67ef33831ba9734e47a
+- https://github.com/wair0/W-FILE-MANAGER/commit/44ed4c861445f91159a904fba427f8124fd8b7a0
+- https://github.com/wair0/W-FILE-MANAGER/commit/cfe990e9f9d8e4818018054e16cb9bb3660992fc
+
+### Estado de CI y entregables
+- En la última consulta, las ejecuciones 35, 36 y 37 seguían en curso; la ejecución 37 era la más reciente y estaba `in_progress`.
+- No afirmar que el APK de estos cambios está compilado hasta volver a consultar [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) y verificar la ejecución más reciente, sus logs y artefactos.
+- Confirmar que el artefacto `WFILEMANAGER` contiene solo `WFILEMANAGER.APK` y que `WFILEMANAGER-SOURCE` contiene por separado `WFILEMANAGER.zip`.
+
+### Próximas pruebas
+1. Verificar compilación Kotlin y `node --check app/src/main/assets/www/app.js` en la ejecución más reciente.
+2. Instalar y abrir el APK en un dispositivo o emulador.
+3. Probar instalación desde ZIP y la autorización de Android; revisar el comportamiento al cancelar o si el APK está dañado.
+4. Probar miniaturas con varios formatos de video, y el fallback para formatos no compatibles.
+5. Verificar que los archivos temporales de instalación no se acumulen indefinidamente; si se detecta acumulación, añadir limpieza segura de temporales antiguos.
+6. Documentar por separado los resultados de CI y las pruebas reales en dispositivo; no declarar pruebas físicas que no se hayan realizado.
