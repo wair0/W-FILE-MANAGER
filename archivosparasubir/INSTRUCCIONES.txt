@@ -1,0 +1,48 @@
+W FILE MANAGER - CORRECCIONES DEL INICIO Y BARRA INFERIOR
+==========================================================
+
+QUE CAMBIA
+- Inicio: se quita la seccion de Permisos y la de Herramientas.
+- Acceso rapido: quedan Imagenes, Videos, Audio y Descargas
+  (se quitan APK, ZIP, Docs y Camara).
+- Orden del Inicio: Recientes, Acceso rapido, Dispositivos, Favoritos
+  y, al final, la tarjeta de Almacenamiento interno.
+- Barra inferior: solo Inicio y Archivos. Imagenes, ZIP y TXT siguen
+  disponibles desde el menu de la hamburguesa.
+
+ARCHIVO INCLUIDO
+- app/src/main/assets/www/js/app.js   (reemplaza al existente)
+
+COMO APLICARLO EN GITHUB (navegador)
+1. Descomprime este ZIP en tu computadora o telefono.
+2. Entra a tu repositorio en GitHub y abre la carpeta:
+   app/src/main/assets/www/js/
+3. Pulsa sobre "app.js" y luego en el icono del lapiz (Edit),
+   o usa "Add file" > "Upload files" desde esa misma carpeta.
+4. Si usas "Upload files": arrastra el nuevo app.js, confirma que
+   reemplaza al anterior y pulsa "Commit changes".
+5. Si usas el editor: borra todo el contenido, pega el contenido del
+   nuevo app.js y pulsa "Commit changes".
+
+COMO APLICARLO CON EL CONECTOR DE GITHUB DE CHATGPT
+- Pide que reemplace el archivo
+  app/src/main/assets/www/js/app.js
+  con el contenido del app.js de este ZIP, en la rama main,
+  con el mensaje de commit: "Corrige inicio y barra inferior".
+
+COMO APLICARLO CON GIT
+   unzip W_FILE_MANAGER_correcciones.zip -d /ruta/al/repo
+   cd /ruta/al/repo
+   git add app/src/main/assets/www/js/app.js
+   git commit -m "Corrige inicio y barra inferior"
+   git push
+
+COMPILAR EL APK
+- Al hacer el commit se ejecuta solo el workflow "Build W FILE MANAGER APK".
+- Ve a la pestana "Actions", abre la ejecucion mas reciente y, al
+  terminar (marca verde), descarga el artefacto "W-FILE-MANAGER-apk".
+- Si no se inicia solo: Actions > Build W FILE MANAGER APK > Run workflow.
+- Desinstala la version anterior o instala encima el nuevo APK.
+
+NOTA
+- Solo cambia app.js: no hace falta tocar Kotlin, el manifiesto ni el icono.
