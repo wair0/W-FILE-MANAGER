@@ -240,7 +240,6 @@ function vHome(v){
   <div class="stitle">Dispositivos</div>
   <div class="list">${S.roots.map((r,i)=>`<div class="row" data-r="${i}"><div class="thumb">${ico('hdd','k-doc')}</div><div class="info"><div class="nm">${esc(r.name)}</div>
    <div class="sub">${fsz(r.total-r.free)} usados de ${fsz(r.total)}</div><div class="bar" style="margin-top:6px"><i style="width:${r.total?(r.total-r.free)/r.total*100:0}%"></i></div></div>${ico('chev')}</div>`).join('')||'<div class="empty">Cargando…</div>'}</div>
-  ${S.favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${S.favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}
   ${S.favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${S.favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}`;
   v.dataset.list='rec';
   hydratePdfThumbs(v);
@@ -461,18 +460,19 @@ function sortMenu(){sheet('Ordenar por',[['name','Nombre'],['date','Fecha'],['si
 /* ================= Visor de imágenes ================= */
 const V={list:[],i:0,s:1,x:0,y:0,ui:true};
 function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.dataset.media='';el.classList.remove('hide-ui');drawViewer()}
+let currentMedia=null;
 function openMediaPlayer(it,type){
+  currentMedia=it;
   const el=$('#viewer');el.hidden=false;el.dataset.media=type;el.classList.remove('hide-ui');
   el.innerHTML=`<div class="vtop"><button class="ib" data-mp="close">${ico('back')}</button><span class="nm">${esc(it.name)}</span><button class="ib" data-mp="info">${ico('info')}</button></div>
   <div class="media-stage ${type==='audio'?'audio-stage':'video-stage'}">${type==='video'?`<div class="media-art">${ico('video')}</div><video id="mediaElement" src="${furl(it.path)}" controls playsinline preload="metadata"></video>`:`<div class="audio-art">${ico('music')}</div><div class="audio-name">${esc(it.name)}</div><audio id="mediaElement" src="${furl(it.path)}" controls preload="metadata"></audio>`}</div>
   <div class="vbot"><button class="ib" data-mp="share">${ico('share')}</button><span class="vcnt">${type==='video'?'REPRODUCTOR DE VÍDEO':'REPRODUCTOR DE AUDIO'}</span><button class="ib" data-mp="open">${ico('ext')}</button></div>`;
 }
-function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML='';$('#viewer').dataset.media=''}
+function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML='';$('#viewer').dataset.media='';currentMedia=null}
 $('#viewer').addEventListener('click',e=>{
   const b=e.target.closest('[data-mp]');if(!b)return;const a=b.dataset.mp;const el=$('#mediaElement');
   if(a==='close'){if(el)el.pause();closeViewer();return}
-  const name=$('#viewer .vtop .nm')?.textContent||'';
-  const it=S.rec.find(x=>x.name===name)||S.items.find(x=>x.name===name);
+  const it=currentMedia;
   if(a==='share'&&it?.path)api('share',{paths:[it.path]}).catch(fail);
   else if(a==='open'&&it?.path)api('open',{path:it.path}).catch(fail);
   else if(a==='info'&&it?.path)doProps(it);
@@ -544,6 +544,7 @@ view.addEventListener('click',async e=>{
   if(b=t.closest('[data-m]')){const x=itemFromEl(b);const src=view.dataset.list==='rec'?S.rec:S.items;return itemMenu(src[+b.dataset.m])}
   if(b=t.closest('[data-bc]'))return openPath(b.dataset.bc);
   if(b=t.closest('[data-sx]')){S.mode='dir';S.reload=loadDir;loadDir();return render()}
+  if(b=t.closest('[data-ri]')){const it=S.rec[+b.dataset.ri];if(it)return openItem(it,S.rec);return}
   if(b=t.closest('[data-h]')){const h=b.dataset.h;
     if(h.startsWith('cat:')){const ty=h.slice(4);return openCat(ty,{image:'Imágenes',video:'Videos',audio:'Audio',doc:'Documentos',apk:'APK'}[ty],ty==='image')}
     if(h.startsWith('go:'))return go(h.slice(3));
