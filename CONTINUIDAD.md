@@ -220,3 +220,14 @@ Enlaces:
 - Se mantiene un aviso visible si Android informa un error de decodificación o lectura.
 - Commit: [1271acb](https://github.com/wair0/W-FILE-MANAGER/commit/1271acb57d92da397fe69f00f40e84ddb3b1c367) — `FIX BLACK SCREEN IN NATIVE VIDEO PLAYER`.
 - Pendiente: confirmar que el workflow de Actions termina correctamente y probar en Android real con MP4 H.264/AAC y un formato adicional. La causa se infiere del código y de la construcción de URI; la reproducción física todavía no se ha verificado.
+
+
+### Controles completos para audio en segundo plano — 2026-10-15
+- Se ampliaron las acciones de la notificación nativa: **Anterior**, **Reproducir/Pausar**, **Siguiente** y **Cerrar**.
+- Se conectaron las acciones a `WFM.mediaCommand` en la interfaz WebView. La cola de reproducción se construye con los archivos de audio de la lista desde la que se abrió la pista; al terminar, avanza a la siguiente si hay más de una.
+- Se añadió una acción de puente para cerrar explícitamente la notificación y se corrigió el comportamiento que la eliminaba al pausar en el segundo cero.
+- Commits:
+  - [4c72a70](https://github.com/wair0/W-FILE-MANAGER/commit/4c72a704318c89de5fae9d304ab260b50f17e07a) — botones nativos de notificación.
+  - [20a14ed](https://github.com/wair0/W-FILE-MANAGER/commit/20a14edce410290a300fde460ab1e0478baa9b17) — conexión de controles a la cola de audio.
+  - [cce61e6](https://github.com/wair0/W-FILE-MANAGER/commit/cce61e67e052ea0e39c1bc803dbe4d4502c4ce6c) — mantener controles al pausar.
+- Pendiente: revisar CI y validar en Android físico/emulador los cuatro controles, incluyendo notificación contraída/expandida y permisos de notificaciones.
