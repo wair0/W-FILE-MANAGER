@@ -327,6 +327,18 @@ async function doExtract(dest,entries){
     const ok=await dialog({title:'Extracción completa',msg:`${n} archivo(s) en\n${dest}`,ok:'Abrir carpeta',cancel:'Cerrar'});if(ok)openPath(dest)}
   catch(e){fail(e)}
 }
+async function zipInstallApk(e){
+  const ok=await dialog({
+    title:'Instalar aplicación',
+    msg:'Se extraerá «'+e.name+'» del ZIP y Android abrirá el instalador del paquete. Solo continúa si confías en el origen del APK.',
+    ok:'Continuar',
+    cancel:'Cancelar'
+  });
+  if(!ok)return;
+  try{
+    await api('zipInstallApk',{path:S.zip.path,entry:e.full});
+  }catch(err){fail(err)}
+}
 async function zipPreview(e){
   const ext=ex(e.name);
   try{
@@ -606,7 +618,7 @@ view.addEventListener('click',async e=>{
     if(a==='extsel'&&S.zip.sel.size)return zipExtract([...S.zip.sel]);return}
   if(b=t.closest('[data-zb]')){S.zip.cwd=b.dataset.zb;return render()}
   if(b=t.closest('[data-zck]')){const e2=S.zip.list[+b.dataset.zck];S.zip.sel.has(e2.full)?S.zip.sel.delete(e2.full):S.zip.sel.add(e2.full);return render()}
-  if(b=t.closest('[data-zi]')){const e2=S.zip.list[+b.dataset.zi];if(e2.dir){S.zip.cwd=e2.full;return render()}return zipPreview(e2)}
+  if(b=t.closest('[data-zi]')){const e2=S.zip.list[+b.dataset.zi];if(e2.dir){S.zip.cwd=e2.full;return render()}if(ex(e2.name)==='apk')return zipInstallApk(e2);return zipPreview(e2)}
   if(b=t.closest('[data-t]')){const a=b.dataset.t;if(a==='new')return openEditor(null,root()+'/Documents');if(a==='find'){S.txts=null;render();return loadTxts()}return}
   if(b=t.closest('[data-e]')){const a=b.dataset.e,ta=$('#ta');
     if(a==='back')return closeEditor();if(a==='save')return saveEditor();
