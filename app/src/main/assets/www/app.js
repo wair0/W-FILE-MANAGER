@@ -196,10 +196,10 @@ function bars(){
 const thumbCache=new Map();
 function thumbOf(it,big){
   const k=kind(it),e=ex(it.name);
-  if(k==='image')return \`<img loading="lazy" decoding="async" src="\${furl(it.path)}" alt="">\`;
+  if(k==='image')return `<img loading="lazy" decoding="async" src="${furl(it.path)}" alt="">`;
   if(k==='video'||(k==='doc'&&e==='pdf')){
     const t=k==='video'?'video':'pdf';
-    return \`<img class="generated-thumb" loading="lazy" decoding="async" data-thumb-kind="\${t}" data-thumb-path="\${esc(it.path)}" alt="" hidden>\${ico(KI[k],'k-'+k)}\`;
+    return `<img class="generated-thumb" loading="lazy" decoding="async" data-thumb-kind="${t}" data-thumb-path="${esc(it.path)}" alt="" hidden>${ico(KI[k],'k-'+k)}`;
   }
   return ico(KI[k],'k-'+k);
 }
@@ -474,12 +474,12 @@ function sortMenu(){sheet('Ordenar por',[['name','Nombre'],['date','Fecha'],['si
 function openMedia(it,type){
   const el=$('#viewer'),video=type==='video',src=furl(it.path);
   el.hidden=false;el.classList.remove('hide-ui');
-  el.innerHTML=\`<div class="vtop"><button class="ib" data-media="close">\${ico('back')}</button><span class="nm">\${esc(it.name)}</span><button class="ib" data-media="external">\${ico('ext')}</button></div>
-    <div class="media-stage \${video?'video-stage':'audio-stage'}">
-      \${video?\`<video id="media-element" controls playsinline preload="metadata"><source src="\${src}" type="\${({mp4:'video/mp4',m4v:'video/mp4',webm:'video/webm','3gp':'video/3gpp',mov:'video/quicktime',mkv:'video/x-matroska',avi:'video/x-msvideo',wmv:'video/x-ms-wmv',flv:'video/x-flv'}[ex(it.name)]||'video/mp4')}"></video>\`:
-      \`<div class="audio-art">\${ico('music')}</div><div class="audio-name">\${esc(it.name)}</div><audio id="media-element" controls preload="metadata"><source src="\${src}" type="\${({mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',ogg:'audio/ogg',opus:'audio/ogg',wav:'audio/wav',flac:'audio/flac',amr:'audio/amr',wma:'audio/x-ms-wma'}[ex(it.name)]||'application/octet-stream')}"></audio>\`}
+  el.innerHTML=`<div class="vtop"><button class="ib" data-media="close">${ico('back')}</button><span class="nm">${esc(it.name)}</span><button class="ib" data-media="external">${ico('ext')}</button></div>
+    <div class="media-stage ${video?'video-stage':'audio-stage'}">
+      ${video?`<video id="media-element" controls playsinline preload="metadata"><source src="${src}" type="${({mp4:'video/mp4',m4v:'video/mp4',webm:'video/webm','3gp':'video/3gpp',mov:'video/quicktime',mkv:'video/x-matroska',avi:'video/x-msvideo',wmv:'video/x-ms-wmv',flv:'video/x-flv'}[ex(it.name)]||'video/mp4')}"></video>`:
+      `<div class="audio-art">${ico('music')}</div><div class="audio-name">${esc(it.name)}</div><audio id="media-element" controls preload="metadata"><source src="${src}" type="${({mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',ogg:'audio/ogg',opus:'audio/ogg',wav:'audio/wav',flac:'audio/flac',amr:'audio/amr',wma:'audio/x-ms-wma'}[ex(it.name)]||'application/octet-stream')}"></audio>`}
       <p id="media-error" class="media-error" hidden>No se pudo reproducir este formato en el reproductor integrado. Puedes abrirlo con otra aplicación.</p>
-    </div>\`;
+    </div>`;
   const media=$('#media-element'),err=$('#media-error');
   media.addEventListener('error',()=>{err.hidden=false});
   media.addEventListener('loadedmetadata',()=>{err.hidden=true});
