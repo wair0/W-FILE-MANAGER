@@ -388,7 +388,7 @@ function vSettings(v){
    <div class="sw"><div>Ordenar por</div><div class="seg">${[['name','Nombre'],['date','Fecha'],['size','Tamaño'],['type','Tipo']].map(s=>`<button data-set="sort:${s[0]}" class="${S.sort===s[0]?'on':''}">${s[1]}</button>`).join('')}</div></div>
    <div class="sw"><div>Orden ascendente</div><div class="tg ${S.asc?'on':''}" data-set="asc"></div></div></div>
   <div class="stitle">Permisos de almacenamiento</div><div class="card" style="padding:6px 14px">${permRows()}<div style="padding:8px 0 10px"><button class="btn solid" data-h="perm">${S.perm.all?'Revisar permisos':'Conceder acceso total'}</button></div></div>
-  <div class="stitle">Aplicación predeterminada</div><div class="card" style="padding:12px 14px"><p style="margin:4px 0 12px;color:var(--muted)">Solicita a Android establecer W File Manager como administrador de archivos predeterminado. La disponibilidad depende de la versión del sistema.</p><button class="btn solid" data-h="default-files">Establecer como predeterminado</button></div><div class="stitle">Datos</div><div class="btns"><button class="btn" data-set="clrrec">Borrar recientes</button><button class="btn" data-set="clrfav">Borrar favoritos</button></div>`;
+  <div class="stitle">Datos</div><div class="btns"><button class="btn" data-set="clrrec">Borrar recientes</button><button class="btn" data-set="clrfav">Borrar favoritos</button></div>`;
   v.dataset.list='';
 }
 function vAbout(v){
@@ -586,7 +586,7 @@ view.addEventListener('click',async e=>{
     if(h.startsWith('go:'))return go(h.slice(3));
     if(h.startsWith('dir:')){const p=root()+'/'+h.slice(4);return openPath(p)}
     if(h==='newtxt')return openEditor(null,root()+'/Documents');
-    if(h==='perm'){await api('reqPerm');return setTimeout(async()=>{await refreshPerm();render()},600)}if(h==='default-files'){return api('requestDefaultFileManager',{}).catch(fail)}return}
+    if(h==='perm'){await api('reqPerm');return setTimeout(async()=>{await refreshPerm();render()},600)}return}
   if(b=t.closest('[data-r]')){return openPath(S.roots[+b.dataset.r].path)}
   if(b=t.closest('[data-f]')){const p=S.favs[+b.dataset.f];return openFav(p)}
   if(b=t.closest('[data-z]')){const a=b.dataset.z;
@@ -670,7 +670,6 @@ window.WFM={
   },
   async onResume(){await refreshPerm();if(S.perm.all){if(S.sec==='home')loadHome();else if(S.reload)S.reload()}},
   mediaCommand(command){const media=$('#media-element');if(!media)return;if(command==='pause')media.pause();else if(command==='play')media.play().catch(()=>{})},
-  requestDefaultFileManager(){return api('requestDefaultFileManager',{}).catch(fail)}
 };
 
 /* ================= Arranque ================= */
