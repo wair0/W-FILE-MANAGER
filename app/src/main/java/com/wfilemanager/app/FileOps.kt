@@ -285,7 +285,7 @@ object FileOps {
 
     fun zipExtract(path: String, dest: String, only: JSONArray?): Int {
         val out = File(dest)
-        out.mkdirs()
+        if (!out.isDirectory && !out.mkdirs()) throw IOException("No se pudo crear la carpeta de destino")
         val base = out.canonicalPath
         var n = 0
         val filter = ArrayList<String>()
@@ -296,13 +296,25 @@ object FileOps {
                 val e: ZipEntry = en.nextElement()
                 if (filter.isNotEmpty() && filter.none { f -> e.name == f || (f.endsWith("/") && e.name.startsWith(f)) }) continue
                 val target = File(out, e.name)
-                if (!target.canonicalPath.startsWith(base + File.separator) && target.canonicalPath != base) {
+                val canonical = target.canonicalPath
+                if (!canonical.startsWith(base + File.separator) && canonical != base) {
                     throw IOException("Entrada ZIP insegura: ${e.name}")
                 }
                 if (e.isDirectory) {
-                    target.mkdirs()
+                    if (target.exists() && !target.isDirectory) {
+                        throw IOException("Ya existe un archivo con el nombre de la carpeta: ${e.name}")
+                    }
+                    if (!target.isDirectory && !target.mkdirs()) {
+                        throw IOException("No se pudo crear la carpeta: ${e.name}")
+                    }
                 } else {
-                    target.parentFile?.mkdirs()
+                    // Nunca sobrescribir silenciosamente archivos que ya existen en el destino.
+                    if (target.exists()) throw IOException("Ya existe un elemento en el destino: ${e.name}")
+                    target.parentFile?.let { parent ->
+                        if (!parent.isDirectory && !parent.mkdirs()) {
+                            throw IOException("No se pudo crear la carpeta de destino")
+                        }
+                    }
                     z.getInputStream(e).use { ins -> target.outputStream().use { ins.copyTo(it) } }
                     if (e.time > 0) target.setLastModified(e.time)
                     n++
