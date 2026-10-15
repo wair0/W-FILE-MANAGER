@@ -242,3 +242,11 @@ Enlaces:
   - [5c86cf0](https://github.com/wair0/W-FILE-MANAGER/commit/5c86cf04db256b02f44579d353394dd88b5e65b9) — sustituir VideoView por Media3.
   - [2bf2d4a](https://github.com/wair0/W-FILE-MANAGER/commit/2bf2d4a83704c63a638883d8c711016cbef08def) — dependencias Media3.
 - Pendiente: confirmar CI y probar con varios vídeos en el Android afectado. Si un archivo usa un códec que el dispositivo no soporta, el reproductor mostrará el error de decodificación.
+
+
+## Abrir ZIP desde Chrome / selector «Abrir con» — 2026-10-15
+
+- Se añadieron filtros `ACTION_VIEW` para `application/zip` y `application/x-zip-compressed`, con esquemas `content://` y `file://`, para que Android pueda ofrecer W FILE MANAGER al abrir una descarga ZIP.
+- `MainActivity` recibe el URI, consulta el nombre visible, copia el ZIP sin sobrescribir otro archivo y llama a la API pública de la WebView para abrir el visor ZIP integrado.
+- Cuando está habilitado el acceso a todos los archivos, se guarda la copia en la carpeta pública Descargas; si no, se usa una copia privada temporal.
+- Pendiente: validar el selector de Chrome y la apertura real en Android; CI solo verifica compilación/sintaxis y no puede comprobar el selector del sistema.
