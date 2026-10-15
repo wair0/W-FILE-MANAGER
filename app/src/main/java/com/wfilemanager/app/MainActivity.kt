@@ -314,27 +314,47 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             try {
                 val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
-                val video = VideoView(this)
-                video.setBackgroundColor(Color.BLACK)
+                val container = FrameLayout(this).apply {
+                    setBackgroundColor(Color.BLACK)
+                    // Un contenedor explícito garantiza que el SurfaceView de VideoView
+                    // tenga tamaño y ventana válidos antes de iniciar la decodificación.
+                    layoutParams = FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+                }
+                val video = VideoView(this).apply {
+                    setBackgroundColor(Color.BLACK)
+                    setZOrderOnTop(false)
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                }
                 val controller = MediaController(this)
                 controller.setAnchorView(video)
                 video.setMediaController(controller)
-                dialog.setContentView(video, FrameLayout.LayoutParams(
+                container.addView(video, FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
                 ))
+                dialog.setContentView(container)
                 video.setOnPreparedListener { player ->
                     player.isLooping = false
+                    video.requestFocus()
+                    // Algunos dispositivos no pintan el primer fotograma hasta que se
+                    // posiciona el decodificador en el inicio del archivo.
+                    video.seekTo(1)
                     video.start()
                     controller.show(2500)
                 }
                 video.setOnErrorListener { _, what, extra ->
-                    Toast.makeText(this, "No se pudo reproducir este vídeo (error $what/$extra). Prueba con MP4 H.264/AAC o con otra aplicación.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "No se pudo reproducir este vídeo (error $what/$extra). Comprueba que el archivo esté íntegro y usa MP4 H.264/AAC o prueba otra aplicación.", Toast.LENGTH_LONG).show()
                     dialog.dismiss()
                     true
                 }
-                dialog.setOnDismissListener { if (video.isPlaying) video.stopPlayback() }
+                dialog.setOnDismissListener { video.stopPlayback() }
                 dialog.show()
-                video.setVideoPath(file.absolutePath)
+                // setVideoPath usa Uri.parse(path); una ruta absoluta sin esquema puede
+                // fallar en algunos dispositivos. Uri.fromFile genera una URI file:// válida.
+                video.setVideoURI(Uri.fromFile(file))
             } catch (t: Throwable) {
                 Toast.makeText(this, "No se pudo abrir el vídeo: " + t.message, Toast.LENGTH_LONG).show()
             }
