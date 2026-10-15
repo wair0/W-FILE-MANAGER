@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WFM" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/wfm_bg</item>
+        <item name="android:statusBarColor">@color/wfm_bg</item>
+        <item name="android:navigationBarColor">@color/wfm_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:colorBackground">@color/wfm_bg</item>
+    </style>
+</resources>
