@@ -105,3 +105,27 @@ El artefacto instalable `WFILEMANAGER` debe contener únicamente `WFILEMANAGER.A
 1. Validar `applicationId` y certificado de firma del APK generado con herramientas Android y registrar sus resultados.
 2. Ejecutar pruebas funcionales de instalación, permisos y operaciones de archivos en un dispositivo o emulador disponible; documentar por separado cada resultado.
 3. Revisar con pruebas específicas la extracción ZIP (entradas duplicadas, rutas maliciosas, archivos grandes y fallos parciales) y las operaciones de mover/copiar en destinos con permisos limitados.
+
+
+## Incidencia y correcciones — 2026-10-15
+
+### Inicio roto
+- Se endureció `vHome()` frente a datos persistidos antiguos o incompletos: el historial reciente, los dispositivos y los favoritos se filtran antes de renderizar.
+- Se validan los valores numéricos del almacenamiento antes de calcular porcentajes y barras; el estado de una entrada no válida ya no debería interrumpir el renderizado completo de Inicio.
+- Se conservó el carrusel horizontal de Recientes y los accesos rápidos actuales.
+
+### Audio y vídeo
+- Causa técnica probable identificada: el endpoint local de WebView servía archivos como una respuesta completa sin atender la cabecera `Range`. Chromium usa solicitudes de bytes parciales para iniciar algunos medios y permitir el desplazamiento temporal.
+- `MainActivity.kt` ahora procesa solicitudes `Range: bytes=...`, posiciona el flujo en el byte solicitado y responde con estado HTTP 206, `Content-Range`, `Content-Length` y `Accept-Ranges: bytes`; las solicitudes normales continúan respondiendo 200.
+- Los archivos siguen sirviéndose desde el almacenamiento local; no se habilitó acceso a recursos web externos.
+- Pendiente validar con un build nuevo y pruebas funcionales en dispositivo/emulador con varios archivos MP4/MP3, reproducción, pausa, avance y retroceso. La causa indicada es la explicación técnica más probable basada en el código; todavía no se ha confirmado en un dispositivo.
+
+### Commits de corrección
+- `4b20386` — `FIX LOCAL MEDIA STREAMING WITH HTTP RANGE SUPPORT`
+- `ab16af2` — `FIX HOME SCREEN RENDERING WITH SAFE STORED DATA`
+
+### Verificación pendiente
+1. Revisar la ejecución de GitHub Actions activada por los cambios y confirmar que compila Kotlin y pasa `node --check`.
+2. Instalar el APK recién generado y comprobar Inicio con historial vacío, normal y con datos guardados antiguos.
+3. Probar reproducción y seek de audio/vídeo local; si falla, revisar el MIME de cada extensión en `FileOps.mime()` y los logs de WebView.
+4. No considerar corregido el problema en dispositivo hasta completar esas pruebas.
