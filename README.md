@@ -17,11 +17,12 @@ Administrador de archivos para Android — **Kotlin + WebView offline** con inte
 - **Application ID / namespace:** `com.wfilemanager.app`
 - **APK:** `WFILEMANAGER.APK`
 - **ZIP de fuentes:** `WFILEMANAGER.zip`
-- **Nombre del artefacto de GitHub Actions:** `WFILEMANAGER` (sin el sufijo `DELIVERABLES`).
+- **Artefacto instalable de GitHub Actions:** `WFILEMANAGER` (contiene solo `WFILEMANAGER.APK`).
+- **Artefacto opcional de fuentes:** `WFILEMANAGER-SOURCE` (contiene `WFILEMANAGER.zip`).
 
 ## Descargar los artefactos
 
-Abre [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) y entra en la ejecución más reciente de **Build W FILE MANAGER**. Descarga el artefacto `WFILEMANAGER`; dentro deben estar `WFILEMANAGER.APK` y `WFILEMANAGER.zip`.
+Abre [GitHub Actions](https://github.com/wair0/W-FILE-MANAGER/actions) y entra en la ejecución más reciente de **Build W FILE MANAGER**. Descarga el artefacto `WFILEMANAGER` para instalar la app: al extraerlo encontrarás directamente `WFILEMANAGER.APK`, sin otro ZIP dentro. El ZIP de fuentes se descarga por separado como `WFILEMANAGER-SOURCE` si lo necesitas.
 
 El workflow compila las variantes debug y release y se ejecuta al hacer push a `main` o manualmente desde **Actions → Build W FILE MANAGER → Run workflow**. Comprueba el estado y los logs de cada ejecución antes de considerar una entrega válida.
 
