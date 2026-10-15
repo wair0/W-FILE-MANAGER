@@ -376,15 +376,16 @@ class MainActivity : AppCompatActivity() {
             if (playing) ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4108)
             return
         }
-        val command = if (playing) "pause" else "play"
-        val actionIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("wfm_media_command", command)
+        fun action(command: String, requestCode: Int): PendingIntent {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("wfm_media_command", command)
+            }
+            return PendingIntent.getActivity(
+                this, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
         }
-        val actionPending = PendingIntent.getActivity(
-            this, if (playing) 4109 else 4110, actionIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
         val builder = NotificationCompat.Builder(this, mediaChannelId)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title.ifBlank { "Audio" })
@@ -393,15 +394,15 @@ class MainActivity : AppCompatActivity() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setOngoing(playing)
-            .setContentIntent(PendingIntent.getActivity(
-                this, 4111, Intent(this, MainActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            ))
+            .setContentIntent(action("open", 4111))
+            .addAction(android.R.drawable.ic_media_previous, "Anterior", action("previous", 4112))
             .addAction(
                 if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
                 if (playing) "Pausar" else "Reproducir",
-                actionPending
+                action(if (playing) "pause" else "play", if (playing) 4109 else 4110)
             )
+            .addAction(android.R.drawable.ic_media_next, "Siguiente", action("next", 4113))
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cerrar", action("close", 4114))
         if (!playing && position <= 0L) {
             getSystemService(NotificationManager::class.java).cancel(mediaNotificationId)
         } else {
