@@ -121,3 +121,11 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - Anterior/siguiente recorren la lista de archivos de audio disponible en la vista desde la que se abrió la pista; al finalizar una pista, la reproducción avanza a la siguiente cuando existe.
 - Se mantiene la notificación al pausar al inicio de una pista. Solo la acción explícita **Cerrar** elimina la notificación y cierra el reproductor integrado.
 - Pendiente: validar los botones en Android real y confirmar el comportamiento de notificaciones en Android 13+ con permiso concedido y denegado.
+
+
+### Reproductor de vídeo interno y pantalla completa (2026-10-15)
+
+- Se reemplazó el reproductor basado en `VideoView` por **AndroidX Media3 / ExoPlayer**, que reproduce el archivo local directamente y utiliza los decodificadores de Android. Esto evita depender del reproductor externo y del pipeline de vídeo HTML de WebView.
+- El reproductor conserva controles integrados y agrega un botón **⛶** para alternar pantalla completa apaisada, ocultando las barras del sistema; al salir o cerrar se restaura la orientación anterior y se libera el decodificador.
+- La app muestra un error de decodificación si el dispositivo no admite el códec del archivo; ningún reproductor puede garantizar formatos/códecs que el dispositivo no soporte.
+- La compilación de CI debe confirmar la integración de Media3. Falta validar reproducción real en el dispositivo donde se observó la pantalla negra.
