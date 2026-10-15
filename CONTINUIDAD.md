@@ -250,3 +250,11 @@ Enlaces:
 - `MainActivity` recibe el URI, consulta el nombre visible, copia el ZIP sin sobrescribir otro archivo y llama a la API pública de la WebView para abrir el visor ZIP integrado.
 - Cuando está habilitado el acceso a todos los archivos, se guarda la copia en la carpeta pública Descargas; si no, se usa una copia privada temporal.
 - Pendiente: validar el selector de Chrome y la apertura real en Android; CI solo verifica compilación/sintaxis y no puede comprobar el selector del sistema.
+
+
+## Instalar APK desde el visor ZIP — 2026-10-15
+
+- Al tocar un archivo con extensión `.apk` dentro de un ZIP, la interfaz pide confirmación y llama a `zipInstallApk` con la ruta del ZIP y la entrada exacta.
+- El código nativo extrae la entrada a caché privada y lanza el instalador de Android usando un URI de FileProvider con permiso de lectura.
+- En Android 8 o posterior se comprueba `canRequestPackageInstalls()`. Si está desactivado, se abre el ajuste de «Instalar aplicaciones desconocidas» para W FILE MANAGER; al regresar, el usuario vuelve a tocar el APK.
+- El diálogo de instalación y la aprobación final siguen bajo control de Android. Pendiente de validar en dispositivo real.
