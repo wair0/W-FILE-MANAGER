@@ -662,6 +662,7 @@ $('#gate').addEventListener('click',async e=>{
 
 /* ================= API pública para Kotlin ================= */
 window.WFM={
+  openExternalZip(path){openZip(path);},
   back(){
     if(!$('#viewer').hidden){closeViewer();return true}
     if(layerOpen()){layerClose();return true}
