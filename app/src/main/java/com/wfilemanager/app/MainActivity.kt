@@ -1,6 +1,11 @@
 package com.wfilemanager.app
 
 import android.Manifest
+import android.app.Dialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.role.RoleManager
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -11,7 +16,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.media.MediaMetadataRetriever
-import android.media.MediaController
+import android.widget.MediaController
 import android.widget.FrameLayout
 import android.widget.VideoView
 import android.widget.Toast
@@ -391,8 +396,8 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= 29) {
             val roleManager = getSystemService(RoleManager::class.java)
             if (roleManager != null && roleManager.isRoleAvailable(filesRoleName)) {
-                if (!roleManager.isRoleHeld(RoleManager.ROLE_FILES)) {
-                    startActivityForResult(roleManager.createRequestRoleIntent(RoleManager.ROLE_FILES), 4112)
+                if (!roleManager.isRoleHeld(filesRoleName)) {
+                    startActivityForResult(roleManager.createRequestRoleIntent(filesRoleName), 4112)
                 } else {
                     Toast.makeText(this, "W File Manager ya es el administrador de archivos predeterminado.", Toast.LENGTH_LONG).show()
                 }
