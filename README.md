@@ -137,3 +137,10 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - Al seleccionar la app, el archivo recibido se copia con un nombre seguro y sin sobrescribir descargas existentes; si está disponible el acceso a todos los archivos, queda en Descargas. Después se abre directamente en el visor ZIP integrado.
 - Si todavía no se concedió acceso a todos los archivos, la copia temporal queda en el almacenamiento privado de la app; la extracción debe dirigirse a una carpeta accesible.
 - Pendiente de validar con un ZIP descargado desde Chrome en un dispositivo Android real, incluyendo «Solo una vez» y «Siempre».
+
+
+### Instalación de APK directamente desde un ZIP
+
+- Al tocar una entrada `.apk` dentro del visor ZIP, W FILE MANAGER solicita confirmación y extrae esa entrada a un archivo temporal privado, para abrir después el instalador de paquetes de Android mediante `FileProvider`.
+- Android exige que el usuario habilite «Permitir desde esta fuente» para W FILE MANAGER en los ajustes de instalación de aplicaciones desconocidas. Si el permiso no está concedido, la app abre esa pantalla y explica que hay que volver a tocar el APK al regresar.
+- W FILE MANAGER no instala aplicaciones silenciosamente ni elude las confirmaciones de seguridad de Android; la instalación final siempre la controla el sistema.
