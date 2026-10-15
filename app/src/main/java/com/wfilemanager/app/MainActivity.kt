@@ -664,6 +664,26 @@ class MainActivity : AppCompatActivity() {
         if (!entryName.lowercase().endsWith(".apk") || entryName.endsWith("/")) {
             throw IllegalArgumentException("La entrada seleccionada no es un APK")
         }
+        // Android requiere autorización explícita por aplicación para instalar APK externos.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            val settingsIntent = Intent(
+                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse("package:$packageName")
+            )
+            try {
+                startActivity(settingsIntent)
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Activa «Permitir desde esta fuente» para W FILE MANAGER y vuelve a tocar el APK dentro del ZIP.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                return
+            } catch (e: ActivityNotFoundException) {
+                throw IllegalStateException("Android no pudo abrir el permiso para instalar APK")
+            }
+        }
         val tempDir = File(cacheDir, "zip-apk").apply {
             if (!exists() && !mkdirs()) throw IllegalStateException("No se pudo preparar el instalador")
         }
