@@ -204,3 +204,11 @@ Enlaces:
 - Se añadió caché de miniaturas en memoria y fallback a iconos cuando el archivo no se puede decodificar.
 - Se conservaron la pantalla Inicio y los cambios de navegación actuales.
 - Pendiente de validar: compilación de GitHub Actions y prueba real en Android, especialmente MP4/MP3, formatos menos comunes y PDFs protegidos o dañados.
+
+
+## Correcciones de multimedia y rol de archivos — 2026-10-15
+
+- Se cambió la apertura de vídeo a un reproductor nativo Android `VideoView` a pantalla completa, con controles y aviso visible si el contenedor/códec falla.
+- Se conectó el reproductor de audio a una notificación persistente con título y acción reproducir/pausar; se añadió el permiso `POST_NOTIFICATIONS` para Android 13+.
+- Se añadieron filtros de intención para raíz/directorio de documentos, categoría `APP_FILES` y una opción en Ajustes para solicitar `RoleManager.ROLE_FILES`.
+- Pendiente: comprobar compilación y probar reproducción, permiso de notificación y solicitud del rol predeterminado en el dispositivo.
