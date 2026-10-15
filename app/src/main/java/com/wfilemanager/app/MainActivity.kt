@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                     val u = request.url
-                    if (u.host == "wfile.local") return serveFile(u)
+                    if (u.host == "wfile.local") return serveFile(u, request.requestHeaders)
                     // La interfaz es offline: impedir que scripts, estilos o imágenes carguen recursos de red.
                     if (u.scheme == "http" || u.scheme == "https") {
                         return WebResourceResponse(
@@ -110,13 +110,70 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- Servir archivos locales a la WebView (miniaturas / visor) ----------
 
-    private fun serveFile(u: Uri): WebResourceResponse? {
+    private fun serveFile(u: Uri, requestHeaders: Map<String, String>): WebResourceResponse? {
         val p = u.getQueryParameter("p") ?: return null
         val f = File(p)
         if (!f.isFile || !f.canRead()) return null
-        val resp = WebResourceResponse(FileOps.mime(f.name), null, FileInputStream(f))
-        resp.responseHeaders = mapOf("Access-Control-Allow-Origin" to "*", "Cache-Control" to "max-age=60")
-        return resp
+
+        // Chromium solicita bytes parciales para reproducir y buscar dentro de audio/vídeo.
+        // Sin soporte Range, algunos contenedores no llegan a iniciar o no permiten avanzar.
+        val range = requestHeaders.entries.firstOrNull { it.key.equals("Range", ignoreCase = true) }?.value
+        val length = f.length()
+        var start = 0L
+        var end = (length - 1).coerceAtLeast(0L)
+        var partial = false
+        if (!range.isNullOrBlank() && range.startsWith("bytes=") && length > 0L) {
+            val parts = range.removePrefix("bytes=").substringBefore(',').split('-', limit = 2)
+            val requestedStart = parts.getOrNull(0)?.toLongOrNull()
+            val requestedEnd = parts.getOrNull(1)?.toLongOrNull()
+            if (requestedStart != null) {
+                start = requestedStart.coerceIn(0L, length - 1L)
+                end = (requestedEnd ?: (length - 1L)).coerceIn(start, length - 1L)
+                partial = true
+            } else if (requestedEnd != null && requestedEnd > 0L) {
+                start = (length - requestedEnd).coerceAtLeast(0L)
+                partial = true
+            }
+        }
+
+        val input = FileInputStream(f)
+        try {
+            input.channel.position(start)
+        } catch (e: Exception) {
+            input.close()
+            throw e
+        }
+        val bytesToSend = if (length == 0L) 0L else end - start + 1L
+        val limited = object : java.io.FilterInputStream(input) {
+            private var remaining = bytesToSend
+            override fun read(): Int {
+                if (remaining <= 0L) return -1
+                val value = super.read()
+                if (value >= 0) remaining--
+                return value
+            }
+            override fun read(buffer: ByteArray, offset: Int, count: Int): Int {
+                if (remaining <= 0L) return -1
+                val n = super.read(buffer, offset, minOf(count.toLong(), remaining).toInt())
+                if (n > 0) remaining -= n.toLong()
+                return n
+            }
+        }
+        val headers = mutableMapOf(
+            "Accept-Ranges" to "bytes",
+            "Access-Control-Allow-Origin" to "*",
+            "Cache-Control" to "no-store",
+            "Content-Length" to bytesToSend.toString()
+        )
+        if (partial) headers["Content-Range"] = "bytes $start-$end/$length"
+        return WebResourceResponse(
+            FileOps.mime(f.name),
+            null,
+            if (partial) 206 else 200,
+            if (partial) "Partial Content" else "OK",
+            headers,
+            limited
+        )
     }
 
     // ---------- Permisos ----------
