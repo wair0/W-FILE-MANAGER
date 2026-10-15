@@ -212,3 +212,11 @@ Enlaces:
 - Se conectó el reproductor de audio a una notificación persistente con título y acción reproducir/pausar; se añadió el permiso `POST_NOTIFICATIONS` para Android 13+.
 - Se retiró la integración para solicitar desde la app el rol de administrador de archivos predeterminado; esa configuración se gestiona desde Android.
 - Pendiente: comprobar compilación y probar reproducción y permiso de notificación en el dispositivo.
+
+
+### Pantalla negra al reproducir vídeo — 2026-10-15
+- Se detectó que el reproductor nativo recibía una ruta absoluta con `VideoView.setVideoPath(file.absolutePath)`. Internamente, esa API convierte la cadena en URI sin construir explícitamente el esquema `file://`; este manejo puede fallar según dispositivo y dejar el reproductor en negro.
+- Se cambió a `setVideoURI(Uri.fromFile(file))`, que construye una URI local válida. También se reforzó el contenedor de pantalla completa del `VideoView`, el foco del reproductor y el posicionamiento inicial del decodificador.
+- Se mantiene un aviso visible si Android informa un error de decodificación o lectura.
+- Commit: [1271acb](https://github.com/wair0/W-FILE-MANAGER/commit/1271acb57d92da397fe69f00f40e84ddb3b1c367) — `FIX BLACK SCREEN IN NATIVE VIDEO PLAYER`.
+- Pendiente: confirmar que el workflow de Actions termina correctamente y probar en Android real con MP4 H.264/AAC y un formato adicional. La causa se infiere del código y de la construcción de URI; la reproducción física todavía no se ha verificado.
