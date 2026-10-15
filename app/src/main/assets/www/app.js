@@ -179,6 +179,7 @@ function render(){
   const v=$('#view');
   const fn={home:vHome,files:vFiles,cat:vFiles,zip:vZip,txt:vTxt,recent:vRecent,favs:vFavs,settings:vSettings,about:vAbout}[S.sec];
   v.style.padding=edit?'0':'';v.style.overflow=edit?'hidden':'';const st=v.scrollTop;fn(v);v.scrollTop=st;
+  if(!edit)hydrateThumbs();
   bars();
 }
 function bars(){
@@ -192,9 +193,33 @@ function bars(){
   cb.hidden=!(S.clip&&S.sec==='files'&&!n);
   if(S.clip&&S.sec==='files'&&!n){cb.innerHTML=`<span>${S.clip.paths.length} elemento(s) · ${S.clip.mode==='copy'?'copiar':'mover'}</span><button class="btn solid" data-c="paste">Pegar aquí</button><button class="ib" data-c="x">${ico('x')}</button>`}
 }
+const thumbCache=new Map();
 function thumbOf(it,big){
-  const k=kind(it);
-  return k==='image'?`<img loading="lazy" decoding="async" src="${furl(it.path)}" alt="">`:ico(KI[k],'k-'+k);
+  const k=kind(it),e=ex(it.name);
+  if(k==='image')return \`<img loading="lazy" decoding="async" src="\${furl(it.path)}" alt="">\`;
+  if(k==='video'||(k==='doc'&&e==='pdf')){
+    const t=k==='video'?'video':'pdf';
+    return \`<img class="generated-thumb" loading="lazy" decoding="async" data-thumb-kind="\${t}" data-thumb-path="\${esc(it.path)}" alt="" hidden>\${ico(KI[k],'k-'+k)}\`;
+  }
+  return ico(KI[k],'k-'+k);
+}
+async function hydrateThumbs(){
+  const nodes=[...document.querySelectorAll('#view [data-thumb-kind]:not([data-thumb-ready])')];
+  await Promise.all(nodes.map(async node=>{
+    const path=node.dataset.thumbPath,kind=node.dataset.thumbKind,key=kind+':'+path;
+    node.dataset.thumbReady='1';
+    try{
+      let src=thumbCache.get(key);
+      if(!src){
+        const r=await api(kind==='video'?'videoThumbnail':'pdfThumbnail',{path});
+        if(!r||!r.b64)throw new Error('Miniatura vacía');
+        src='data:image/jpeg;base64,'+r.b64;thumbCache.set(key,src);
+      }
+      if(!node.isConnected)return;
+      node.src=src;node.hidden=false;
+      const icon=node.nextElementSibling;if(icon&&icon.classList.contains('ic'))icon.style.display='none';
+    }catch(_){/* El icono de tipo queda como alternativa para archivos no compatibles o dañados. */}
+  }));
 }
 function rowHtml(it,i,o){
   o=o||{};const k=kind(it),sel=S.sel.has(it.path),fav=S.favs.includes(it.path);
@@ -389,6 +414,7 @@ async function openItem(it,list){
   if(it.dir){return openPath(it.path)}
   pushRecent(it);
   if(k==='image'){const imgs=list.filter(x=>kind(x)==='image');return openViewer(imgs,imgs.findIndex(x=>x.path===it.path))}
+  if(k==='video'||k==='audio')return openMedia(it,k);
   if(k==='zip'&&ex(it.name)!=='apk'&&['zip','jar'].includes(ex(it.name)))return openZip(it.path);
   if(k==='text')return openEditor(it.path);
   try{await api('open',{path:it.path})}catch(e){fail(e)}
@@ -444,9 +470,31 @@ function ctxMenu(){
 }
 function sortMenu(){sheet('Ordenar por',[['name','Nombre'],['date','Fecha'],['size','Tamaño'],['type','Tipo']].map(s=>({i:'sort',t:s[1]+(S.sort===s[0]?(S.asc?'  ↑':'  ↓'):''),f:()=>{if(S.sort===s[0])S.asc=!S.asc;else{S.sort=s[0];S.asc=true}store.set('sort',S.sort);store.set('asc',S.asc);refreshAll()}})))}
 
+/* ================= Reproductor multimedia integrado ================= */
+function openMedia(it,type){
+  const el=$('#viewer'),video=type==='video',src=furl(it.path);
+  el.hidden=false;el.classList.remove('hide-ui');
+  el.innerHTML=\`<div class="vtop"><button class="ib" data-media="close">\${ico('back')}</button><span class="nm">\${esc(it.name)}</span><button class="ib" data-media="external">\${ico('ext')}</button></div>
+    <div class="media-stage \${video?'video-stage':'audio-stage'}">
+      \${video?\`<video id="media-element" controls playsinline preload="metadata"><source src="\${src}" type="\${({mp4:'video/mp4',m4v:'video/mp4',webm:'video/webm','3gp':'video/3gpp',mov:'video/quicktime',mkv:'video/x-matroska',avi:'video/x-msvideo',wmv:'video/x-ms-wmv',flv:'video/x-flv'}[ex(it.name)]||'video/mp4')}"></video>\`:
+      \`<div class="audio-art">\${ico('music')}</div><div class="audio-name">\${esc(it.name)}</div><audio id="media-element" controls preload="metadata"><source src="\${src}" type="\${({mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',ogg:'audio/ogg',opus:'audio/ogg',wav:'audio/wav',flac:'audio/flac',amr:'audio/amr',wma:'audio/x-ms-wma'}[ex(it.name)]||'application/octet-stream')}"></audio>\`}
+      <p id="media-error" class="media-error" hidden>No se pudo reproducir este formato en el reproductor integrado. Puedes abrirlo con otra aplicación.</p>
+    </div>\`;
+  const media=$('#media-element'),err=$('#media-error');
+  media.addEventListener('error',()=>{err.hidden=false});
+  media.addEventListener('loadedmetadata',()=>{err.hidden=true});
+  media.play().catch(()=>{});
+  el.querySelector('[data-media="close"]').onclick=closeViewer;
+  el.querySelector('[data-media="external"]').onclick=()=>api('open',{path:it.path}).catch(fail);
+}
+$('#viewer').addEventListener('click',e=>{
+  const b=e.target.closest('[data-media]');if(!b)return;
+  if(b.dataset.media==='close')closeViewer();
+  else if(b.dataset.media==='external'){const media=$('#media-element');if(media)api('open',{path:media.dataset.path||''}).catch(fail)}
+});
 /* ================= Visor de imágenes ================= */
 const V={list:[],i:0,s:1,x:0,y:0,ui:true};
-function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
+function openViewer(list,i){function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
 function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML=''}
 function vSrc(it){return it.src||furl(it.path)}
 function drawViewer(){
