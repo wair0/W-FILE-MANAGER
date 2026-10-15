@@ -7,6 +7,11 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -209,8 +214,34 @@ class MainActivity : AppCompatActivity() {
         "zipExtract" -> FileOps.zipExtract(a.getString("path"), a.getString("dest"), a.optJSONArray("entries"))
         "zipCreate" -> FileOps.zipCreate(a.getJSONArray("paths"), a.getString("dest"), a.getString("name"))
         "open" -> { openFile(a.getString("path")); true }
+        "pdfThumbnail" -> pdfThumbnail(a.getString("path"))
         "share" -> { shareFiles(a.getJSONArray("paths")); true }
         else -> throw IllegalArgumentException("Método desconocido: $m")
+    }
+
+    private fun pdfThumbnail(path: String): JSONObject {
+        val file = File(path)
+        if (!file.isFile || !file.canRead() || FileOps.ext(file.name) != "pdf") {
+            throw IllegalArgumentException("PDF no disponible")
+        }
+        val encoded = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer ->
+                if (renderer.pageCount < 1) throw IllegalArgumentException("PDF vacío")
+                renderer.openPage(0).use { page ->
+                    val width = 240
+                    val height = maxOf(1, (width.toFloat() * page.height / page.width).toInt())
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    bitmap.eraseColor(Color.WHITE)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    ByteArrayOutputStream().use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 76, out)
+                        bitmap.recycle()
+                        Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+                    }
+                }
+            }
+        }
+        return JSONObject().put("b64", encoded)
     }
 
     private fun uriFor(f: File): Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", f)
