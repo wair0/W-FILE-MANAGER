@@ -487,11 +487,6 @@ function openMedia(it,type){
   el.querySelector('[data-media="close"]').onclick=closeViewer;
   el.querySelector('[data-media="external"]').onclick=()=>api('open',{path:it.path}).catch(fail);
 }
-$('#viewer').addEventListener('click',e=>{
-  const b=e.target.closest('[data-media]');if(!b)return;
-  if(b.dataset.media==='close')closeViewer();
-  else if(b.dataset.media==='external'){const media=$('#media-element');if(media)api('open',{path:media.dataset.path||''}).catch(fail)}
-});
 /* ================= Visor de imágenes ================= */
 const V={list:[],i:0,s:1,x:0,y:0,ui:true};
 function openViewer(list,i){function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
