@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private val pool = Executors.newFixedThreadPool(4)
     private val mediaNotificationId = 4107
     private val mediaChannelId = "wfm_audio_playback"
+    private val filesRoleName = "android.app.role.FILES"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -389,7 +390,7 @@ class MainActivity : AppCompatActivity() {
     private fun requestDefaultFileManager() {
         if (Build.VERSION.SDK_INT >= 29) {
             val roleManager = getSystemService(RoleManager::class.java)
-            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_FILES)) {
+            if (roleManager != null && roleManager.isRoleAvailable(filesRoleName)) {
                 if (!roleManager.isRoleHeld(RoleManager.ROLE_FILES)) {
                     startActivityForResult(roleManager.createRequestRoleIntent(RoleManager.ROLE_FILES), 4112)
                 } else {
