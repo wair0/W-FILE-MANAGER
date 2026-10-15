@@ -63,7 +63,7 @@ const S={sec:'home',path:null,items:[],mode:'dir',q:'',view:store.get('view','li
 const SECS=[{id:'home',t:'Inicio',i:'home'},{id:'files',t:'Explorador',i:'folder'},{id:'images',t:'Imágenes',i:'image'},{id:'zip',t:'Visor ZIP',i:'zip'},{id:'txt',t:'Editor TXT',i:'text'},
  {id:'recent',t:'Recientes',i:'clock'},{id:'favs',t:'Favoritos',i:'star'},{id:'settings',t:'Ajustes',i:'settings'},{id:'about',t:'Acerca de',i:'info'}];
 const CATS=[{t:'video',n:'Videos',i:'video'},{t:'audio',n:'Audio',i:'music'},{t:'doc',n:'Documentos',i:'doc'},{t:'apk',n:'APK',i:'apk'}];
-const NAV=['home','files','recent','favs','settings'];
+const NAV=['home','files'];
 const root=()=>(S.roots[0]&&S.roots[0].path)||'/storage/emulated/0';
 const rootOf=p=>{const r=S.roots.filter(r=>p===r.path||p.startsWith(r.path+'/')).sort((a,b)=>b.path.length-a.path.length)[0];return r?r.path:root()};
 
@@ -174,13 +174,12 @@ function render(){
   const edit=S.sec==='txt'&&S.ed;
   $('#hdr').style.display=edit?'none':'';
   const nv=S.sec==='cat'&&S.cat.type==='image'?'images':S.sec;
-  const navItems=[{id:'home',t:'Inicio',i:'home'},{id:'files',t:'Archivos',i:'folder'},{id:'recent',t:'Recientes',i:'clock'},{id:'favs',t:'Favoritos',i:'star'},{id:'settings',t:'Ajustes',i:'settings'}];
-  $('#nav').innerHTML=NAV.map(id=>{const s=navItems.find(x=>x.id===id);return `<button data-n="${id}" class="${nv===id?'on':''}">${ico(s.i)}<span>${esc(s.t)}</span></button>`}).join('');
+  $('#nav').innerHTML=NAV.map(id=>{const s=SECS.find(x=>x.id===id);return `<button data-n="${id}" class="${nv===id?'on':''}">${ico(s.i)}<span>${esc(id==='zip'?'ZIP':id==='txt'?'TXT':id==='files'?'Archivos':s.t)}</span></button>`}).join('');
   $('#nav').style.display=edit?'none':'';
   const v=$('#view');
   const fn={home:vHome,files:vFiles,cat:vFiles,zip:vZip,txt:vTxt,recent:vRecent,favs:vFavs,settings:vSettings,about:vAbout}[S.sec];
   v.style.padding=edit?'0':'';v.style.overflow=edit?'hidden':'';const st=v.scrollTop;fn(v);v.scrollTop=st;
-  hydratePdfThumbs(v);hydrateVideoThumbs(v);bars();
+  bars();
 }
 function bars(){
   const sb=$('#selbar'),cb=$('#clipbar');
@@ -193,34 +192,9 @@ function bars(){
   cb.hidden=!(S.clip&&S.sec==='files'&&!n);
   if(S.clip&&S.sec==='files'&&!n){cb.innerHTML=`<span>${S.clip.paths.length} elemento(s) · ${S.clip.mode==='copy'?'copiar':'mover'}</span><button class="btn solid" data-c="paste">Pegar aquí</button><button class="ib" data-c="x">${ico('x')}</button>`}
 }
-const pdfThumbCache=new Map();
 function thumbOf(it,big){
   const k=kind(it);
-  if(k==='image')return `<img loading="lazy" decoding="async" src="${furl(it.path)}" alt="">`;
-  if(!it.dir&&ex(it.name)==='pdf')return `<span class="pdf-mark">PDF</span><img class="pdf-page" data-pdf="${esc(it.path)}" alt="" hidden>`;
-  if(!it.dir&&k==='video')return `<span class="video-mark">${ico('video','k-video')}</span><img data-video="${esc(it.path)}" alt="" hidden>`;
-  return ico(KI[k],'k-'+k);
-}
-function hydratePdfThumbs(scope){
-  (scope||document).querySelectorAll('img[data-pdf]').forEach(async im=>{
-    const p=im.dataset.pdf;if(!p)return;
-    try{
-      if(!pdfThumbCache.has(p))pdfThumbCache.set(p,api('pdfThumbnail',{path:p}).then(r=>'data:image/jpeg;base64,'+r.b64).catch(()=>null));
-      const src=await pdfThumbCache.get(p);if(!src||!im.isConnected)return;
-      im.src=src;im.hidden=false;const mark=im.parentElement.querySelector('.pdf-mark');if(mark)mark.hidden=true;
-    }catch(e){}
-  });
-}
-const videoThumbCache=new Map();
-function hydrateVideoThumbs(scope){
-  (scope||document).querySelectorAll('img[data-video]').forEach(async im=>{
-    const p=im.dataset.video;if(!p)return;
-    try{
-      if(!videoThumbCache.has(p))videoThumbCache.set(p,api('videoThumbnail',{path:p}).then(r=>'data:image/jpeg;base64,'+r.b64).catch(()=>null));
-      const src=await videoThumbCache.get(p);if(!src||!im.isConnected)return;
-      im.src=src;im.hidden=false;const mark=im.parentElement.querySelector('.video-mark');if(mark)mark.hidden=true;
-    }catch(e){}
-  });
+  return k==='image'?`<img loading="lazy" decoding="async" src="${furl(it.path)}" alt="">`:ico(KI[k],'k-'+k);
 }
 function rowHtml(it,i,o){
   o=o||{};const k=kind(it),sel=S.sel.has(it.path),fav=S.favs.includes(it.path);
@@ -243,27 +217,20 @@ function ring(pct){const r=42,c=2*Math.PI*r,d=c*pct/100;return `<div class="ring
 function vHome(v){
   const r0=S.roots[0],used=r0?r0.total-r0.free:0,pct=r0&&r0.total?used/r0.total*100:0;
   const p=S.perm;
+  const hero=`<div class="card hero">${ring(pct)}<div style="flex:1;min-width:0"><h2>Almacenamiento interno</h2><div class="big">${r0?fsz(used):'—'} <small>/ ${r0?fsz(r0.total):'—'}</small></div>
+   <div class="bar"><i style="width:${pct}%"></i></div><div class="meta">LIBRE ${r0?fsz(r0.free):'—'} · ${p.all?'ACCESO TOTAL':'ACCESO LIMITADO'}</div></div></div>`;
   v.innerHTML=`
-  <div class="card hero">${ring(pct)}<div style="flex:1;min-width:0"><h2>Almacenamiento interno</h2><div class="big">${r0?fsz(used):'—'} <small>/ ${r0?fsz(r0.total):'—'}</small></div>
-   <div class="bar"><i style="width:${pct}%"></i></div><div class="meta">LIBRE ${r0?fsz(r0.free):'—'} · ${p.all?'ACCESO TOTAL':'ACCESO LIMITADO'}</div></div></div>
+  <div class="stitle">Recientes<span class="sp"></span><button data-h="go:recent">VER TODO</button></div>
+  ${S.rec.length?`<div class="list">${S.rec.slice(0,5).map((it,i)=>rowHtml(it,i,{path:1})).join('')}</div>`:'<div class="empty" style="padding:22px">SIN ACTIVIDAD RECIENTE</div>'}
   <div class="stitle">Acceso rápido</div>
   <div class="tiles">
    <button class="tile" data-h="cat:image">${ico('image','k-image')}Imágenes</button><button class="tile" data-h="cat:video">${ico('video','k-video')}Videos</button>
-   <button class="tile" data-h="cat:audio">${ico('music','k-audio')}Audio</button><button class="tile" data-h="cat:doc">${ico('doc','k-doc')}Docs</button>
-   <button class="tile" data-h="cat:apk">${ico('apk','k-apk')}APK</button><button class="tile" data-h="go:zip">${ico('zip','k-zip')}ZIP</button>
-   <button class="tile" data-h="dir:Download">${ico('download','k-text')}Descargas</button><button class="tile" data-h="dir:DCIM/Camera">${ico('image','k-folder')}Cámara</button></div>
-  <div class="stitle">Herramientas</div>
-  <div class="tools"><button class="tool" data-h="go:zip">${ico('zip','k-zip')}<b>Visor ZIP</b><span>Ver y extraer paquetes</span></button>
-   <button class="tool" data-h="newtxt">${ico('text','k-text')}<b>Editor TXT</b><span>Crear y editar texto</span></button>
-   <button class="tool" data-h="go:images">${ico('image','k-image')}<b>Galería</b><span>Visor de imágenes</span></button></div>
+   <button class="tile" data-h="cat:audio">${ico('music','k-audio')}Audio</button><button class="tile" data-h="dir:Download">${ico('download','k-text')}Descargas</button></div>
   <div class="stitle">Dispositivos</div>
   <div class="list">${S.roots.map((r,i)=>`<div class="row" data-r="${i}"><div class="thumb">${ico('hdd','k-doc')}</div><div class="info"><div class="nm">${esc(r.name)}</div>
    <div class="sub">${fsz(r.total-r.free)} usados de ${fsz(r.total)}</div><div class="bar" style="margin-top:6px"><i style="width:${r.total?(r.total-r.free)/r.total*100:0}%"></i></div></div>${ico('chev')}</div>`).join('')||'<div class="empty">Cargando…</div>'}</div>
   ${S.favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${S.favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}
-  <div class="stitle">Recientes<span class="sp"></span><button data-h="go:recent">VER TODO</button></div>
-  ${S.rec.length?`<div class="list">${S.rec.slice(0,5).map((it,i)=>rowHtml(it,i,{path:1})).join('')}</div>`:'<div class="empty" style="padding:22px">SIN ACTIVIDAD RECIENTE</div>'}
-  <div class="stitle">Permisos</div>
-  <div class="card" style="padding:6px 14px">${permRows()}${p.all?'':'<div style="padding:8px 0 10px"><button class="btn solid" data-h="perm">Conceder acceso total</button></div>'}</div>`;
+  <div class="stitle">Almacenamiento</div>${hero}`;
   v.dataset.list='rec';
 }
 function permRows(){
@@ -285,7 +252,7 @@ function vFiles(v){
   v.innerHTML=head+listHtml(S.items,{grid:S.sec==='cat'?S.cat.grid:undefined,path:S.sec==='cat'||S.mode==='search'});
   v.dataset.list='items';
 }
-function vRecent(v){S.items=S.rec;v.innerHTML=`<div class="stitle">Archivos recientes</div>${listHtml(S.items,{path:1})}`;v.dataset.list='items';hydratePdfThumbs(v)}
+function vRecent(v){S.items=S.rec;v.innerHTML=`<div class="stitle">Archivos recientes</div>${listHtml(S.items,{path:1})}`;v.dataset.list='items'}
 async function loadFavs(){
   const out=[];
   for(const p of S.favs){try{const t=await api('stat',{path:p});out.push({name:t.name,path:p,dir:t.dir,size:t.size,mtime:t.mtime,count:0})}catch(e){}}
@@ -316,7 +283,7 @@ function vZipOpen(v){
   <div class="btns" style="margin-bottom:12px"><button class="btn solid" data-z="ext">${ico('download')} Extraer todo</button><button class="btn" data-z="extsel" ${z.sel.size?'':'disabled style="opacity:.4"'}>Selección (${z.sel.size})</button><button class="btn vio" data-z="close">${ico('x')} Cerrar</button></div>
   <div class="card bc"><button data-zb="">${esc(bn(z.path))}</button>${segs.map(s=>{acc+=s+'/';return `${ico('chev')}<button data-zb="${esc(acc)}">${esc(s)}</button>`}).join('')}</div>
   <div class="list">${list.map((e,i)=>`<div class="row ${z.sel.has(e.full)?'sel':''}" data-zi="${i}"><div class="ck" data-zck="${i}" style="${z.sel.has(e.full)?'':'color:transparent'}">${ico('check')}</div><div class="thumb">${ico(e.dir?'folder':KI[kind({name:e.name})],'k-'+(e.dir?'folder':kind({name:e.name})))}</div>
-   <div class="info"><div class="nm">${esc(e.name)}</div><div class="sub">${e.dir?'carpeta':ex(e.name)==='apk'?'Tocar para instalar APK':fsz(e.size)+(e.csize>=0?' · comp. '+fsz(e.csize):'')}</div></div>${ico('chev')}</div>`).join('')||'<div class="empty">ZIP VACÍO</div>'}</div>`;
+   <div class="info"><div class="nm">${esc(e.name)}</div><div class="sub">${e.dir?'carpeta':fsz(e.size)+(e.csize>=0?' · comp. '+fsz(e.csize):'')}</div></div>${ico('chev')}</div>`).join('')||'<div class="empty">ZIP VACÍO</div>'}</div>`;
   v.dataset.list='';
 }
 async function openZip(path){
@@ -422,8 +389,6 @@ async function openItem(it,list){
   if(it.dir){return openPath(it.path)}
   pushRecent(it);
   if(k==='image'){const imgs=list.filter(x=>kind(x)==='image');return openViewer(imgs,imgs.findIndex(x=>x.path===it.path))}
-  if(k==='video'||k==='audio')return openMediaPlayer(it,k);
-  if(k==='doc'&&ex(it.name)==='pdf')return api('open',{path:it.path}).catch(e=>fail(e));
   if(k==='zip'&&ex(it.name)!=='apk'&&['zip','jar'].includes(ex(it.name)))return openZip(it.path);
   if(k==='text')return openEditor(it.path);
   try{await api('open',{path:it.path})}catch(e){fail(e)}
@@ -481,34 +446,8 @@ function sortMenu(){sheet('Ordenar por',[['name','Nombre'],['date','Fecha'],['si
 
 /* ================= Visor de imágenes ================= */
 const V={list:[],i:0,s:1,x:0,y:0,ui:true};
-function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.dataset.media='';el.classList.remove('hide-ui');drawViewer()}
-let currentMedia=null;
-function mediaFileUrl(path){
-  // Leer el medio desde su URI local evita bloqueos de las peticiones Range en WebView.
-  return 'file://' + String(path).split('/').map((part,i)=>i===0?'':encodeURIComponent(part)).join('/');
-}
-function openMediaPlayer(it,type){
-  currentMedia=it;
-  const el=$('#viewer');el.hidden=false;el.dataset.media=type;el.classList.remove('hide-ui');
-  const src=mediaFileUrl(it.path);
-  el.innerHTML=`<div class="vtop"><button class="ib" data-mp="close">${ico('back')}</button><span class="nm">${esc(it.name)}</span><button class="ib" data-mp="info">${ico('info')}</button></div>
-  <div class="media-stage ${type==='audio'?'audio-stage':'video-stage'}">${type==='video'?`<div class="media-art">${ico('video')}</div><video id="mediaElement" src="${src}" controls playsinline preload="metadata"></video>`:`<div class="audio-art">${ico('music')}</div><div class="audio-name">${esc(it.name)}</div><audio id="mediaElement" src="${src}" controls preload="metadata"></audio>`}</div>
-  <div class="vbot"><button class="ib" data-mp="share">${ico('share')}</button><span class="vcnt">${type==='video'?'REPRODUCTOR DE VÍDEO':'REPRODUCTOR DE AUDIO'}</span><button class="ib" data-mp="open">${ico('ext')}</button></div>`;
-  const media=$('#mediaElement');
-  media.addEventListener('error',()=>{
-    const codes={1:'Reproducción cancelada.',2:'No se pudo leer el archivo o faltan permisos.',3:'Códec no compatible con Android.',4:'Formato no compatible con el reproductor.'};
-    toast(codes[media.error?.code]||'No se pudo reproducir el archivo.',true);
-  },{once:true});
-}
-function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML='';$('#viewer').dataset.media='';currentMedia=null}
-$('#viewer').addEventListener('click',e=>{
-  const b=e.target.closest('[data-mp]');if(!b)return;const a=b.dataset.mp;const el=$('#mediaElement');
-  if(a==='close'){if(el)el.pause();closeViewer();return}
-  const it=currentMedia;
-  if(a==='share'&&it?.path)api('share',{paths:[it.path]}).catch(fail);
-  else if(a==='open'&&it?.path)api('open',{path:it.path}).catch(fail);
-  else if(a==='info'&&it?.path)doProps(it);
-});
+function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
+function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML=''}
 function vSrc(it){return it.src||furl(it.path)}
 function drawViewer(){
   const it=V.list[V.i],el=$('#viewer');
@@ -576,7 +515,6 @@ view.addEventListener('click',async e=>{
   if(b=t.closest('[data-m]')){const x=itemFromEl(b);const src=view.dataset.list==='rec'?S.rec:S.items;return itemMenu(src[+b.dataset.m])}
   if(b=t.closest('[data-bc]'))return openPath(b.dataset.bc);
   if(b=t.closest('[data-sx]')){S.mode='dir';S.reload=loadDir;loadDir();return render()}
-  if(b=t.closest('[data-ri]')){const it=S.rec[+b.dataset.ri];if(it)return openItem(it,S.rec);return}
   if(b=t.closest('[data-h]')){const h=b.dataset.h;
     if(h.startsWith('cat:')){const ty=h.slice(4);return openCat(ty,{image:'Imágenes',video:'Videos',audio:'Audio',doc:'Documentos',apk:'APK'}[ty],ty==='image')}
     if(h.startsWith('go:'))return go(h.slice(3));
@@ -593,7 +531,7 @@ view.addEventListener('click',async e=>{
     if(a==='extsel'&&S.zip.sel.size)return zipExtract([...S.zip.sel]);return}
   if(b=t.closest('[data-zb]')){S.zip.cwd=b.dataset.zb;return render()}
   if(b=t.closest('[data-zck]')){const e2=S.zip.list[+b.dataset.zck];S.zip.sel.has(e2.full)?S.zip.sel.delete(e2.full):S.zip.sel.add(e2.full);return render()}
-  if(b=t.closest('[data-zi]')){const e2=S.zip.list[+b.dataset.zi];if(e2.dir){S.zip.cwd=e2.full;return render()}if(ex(e2.name)==='apk')return api('zipInstallApk',{path:S.zip.path,entry:e2.full}).then(()=>toast('Abriendo instalador de Android…')).catch(fail);return zipPreview(e2)}
+  if(b=t.closest('[data-zi]')){const e2=S.zip.list[+b.dataset.zi];if(e2.dir){S.zip.cwd=e2.full;return render()}return zipPreview(e2)}
   if(b=t.closest('[data-t]')){const a=b.dataset.t;if(a==='new')return openEditor(null,root()+'/Documents');if(a==='find'){S.txts=null;render();return loadTxts()}return}
   if(b=t.closest('[data-e]')){const a=b.dataset.e,ta=$('#ta');
     if(a==='back')return closeEditor();if(a==='save')return saveEditor();
