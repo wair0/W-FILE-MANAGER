@@ -1,56 +1,90 @@
 # W FILE MANAGER — CONTINUIDAD DEL PROYECTO
 
-Fecha: 2026-10-15
+Fecha de actualización: 2026-10-15
 Rama de trabajo: `main`
 Repositorio: https://github.com/wair0/W-FILE-MANAGER/
 
 ## Objetivos obligatorios
 
 - Android applicationId y namespace: `com.wfilemanager.app`.
-- Nombre del APK de entrega: `WFILEMANAGER.APK`.
-- Nombre del ZIP de artefactos: `WFILEMANAGER.zip`.
+- Nombre del APK: `WFILEMANAGER.APK`.
+- Nombre del ZIP de fuentes: `WFILEMANAGER.zip`.
+- Nombre del artefacto descargable de GitHub Actions: `WFILEMANAGER` (quitar `DELIVERABLES` del nombre del artefacto).
 - Trabajar directamente en `main`.
 - No crear ramas alternativas, commits de validación ni workflows dedicados exclusivamente a validar cambios.
 - Usar GitHub Actions para compilar; no exigir una compilación local como parte del flujo de entrega.
+- Distinguir las comprobaciones de CI de las pruebas funcionales en un dispositivo Android real.
 
-## Trabajo registrado en la conversación
+## Estado y cambios registrados
 
-1. Se detectaron referencias de CSS/JavaScript que no coincidían con la ubicación real de `app.css` y `app.js` dentro de `app/src/main/assets/www/`.
-2. Se migró la identidad Android hacia `com.wfilemanager.app` y se ajustaron rutas de fuentes Kotlin y configuración de FileProvider.
-3. Se prepararon recursos de marca/icono adaptativo y se inspeccionó `W_FILE_MANAGER_icono.zip`, que incluye PNG de distintas densidades, XML adaptativos, recursos drawable y `branding/w_file_manager_icon.svg`.
-4. Se corrigió la ubicación de recursos de valores Android para que estén bajo `app/src/main/res/values/`.
-5. Se revisaron de forma estática el puente JavaScript-Kotlin y las defensas de extracción ZIP. Estas comprobaciones no sustituyen las pruebas en dispositivo.
+### Base del proyecto
 
-## Commits mencionados en el seguimiento
+- Aplicación Android nativa en Kotlin con interfaz HTML/CSS/JavaScript dentro de WebView y recursos locales para funcionamiento offline.
+- Los recursos web se encuentran bajo `app/src/main/assets/www/`.
+- Los componentes Kotlin principales incluyen `MainActivity.kt` y `FileOps.kt`.
+- Se inspeccionó el ZIP de iconos adjunto. Sus recursos vectoriales adaptativos se compararon con los del repositorio y resultaron semánticamente equivalentes; evitar reemplazarlos sin una diferencia comprobada.
+
+### Cambios recientes registrados en la conversación
+
+- Se bloquean solicitudes de recursos HTTP/HTTPS en la WebView para mantener el contenido de la interfaz local/offline.
+- Se ajustó el flujo de permisos de almacenamiento para Android 11+ para solicitar el acceso especial a todos los archivos sin depender primero de permisos multimedia.
+- La extracción ZIP valida rutas para prevenir zip-slip, rechaza sobrescribir archivos existentes y verifica la creación del directorio de destino.
+- La vista previa de entradas ZIP incorpora un límite de lectura para datos cuyo tamaño no está declarado.
+- Se ajustó el tipo MIME en el flujo de compartir para evitar que una selección previa de carpeta determine incorrectamente el MIME del archivo.
+- Se añadió una comprobación de sintaxis JavaScript al proceso de CI.
+- README actualizado para reflejar el estado técnico, la seguridad y los nombres correctos de los entregables.
+
+## Commits de referencia
 
 - `7b94465` — `FIX ANDROID SDK SETUP AND FILE SHARING PATHS`
 - `bb805d6` — `FIX ANDROID VALUES RESOURCE DIRECTORY`
+- `4401d57` — bloqueo de solicitudes de red en WebView.
+- `b5eac34` — ajuste del flujo de permisos Android.
+- `d801457` — protecciones de extracción ZIP.
+- `aacdb88` — revisión de artefactos y cambios de seguridad/CI referidos en el seguimiento.
+- `4fdae52` — actualización del README y documentación de los nombres de artefactos.
 
-Referencias:
+Enlaces de referencia:
 - https://github.com/wair0/W-FILE-MANAGER/commit/7b94465dd7b95f13096c2d4a61864d314189ac3a
 - https://github.com/wair0/W-FILE-MANAGER/commit/bb805d65f4712c2b6d2c3ecd1c113f35579be93d
+- https://github.com/wair0/W-FILE-MANAGER/commit/4401d579603b15dee7078e8bce36563414eb3e42
+- https://github.com/wair0/W-FILE-MANAGER/commit/b5eac34e7e3e796f2ff0ba45484385b7642fc016
+- https://github.com/wair0/W-FILE-MANAGER/commit/d801457611d190e37b27d71f748d5f88c02bb298
+- https://github.com/wair0/W-FILE-MANAGER/commit/aacdb885822024b019bb9a5b23dd22112b7c63f0
+- https://github.com/wair0/W-FILE-MANAGER/commit/4fdae52e7e8daf0c72141bf7ef427cbe29f73554
 
-## Estado de compilación
+## Compilación y artefactos
 
-La última ejecución citada fue:
-https://github.com/wair0/W-FILE-MANAGER/actions/runs/38697438430
+Las ejecuciones citadas durante el seguimiento incluyen:
+- https://github.com/wair0/W-FILE-MANAGER/actions/runs/38697438430
+- https://github.com/wair0/W-FILE-MANAGER/actions/runs/38698423720
+- https://github.com/wair0/W-FILE-MANAGER/actions/runs/38698751177
+- https://github.com/wair0/W-FILE-MANAGER/actions/runs/38699201417
 
-En el momento de redactar esta nota no hay confirmación concluyente en esta continuidad de que las variantes debug y release hayan finalizado correctamente ni de que ambos artefactos se hayan generado. Consultar GitHub Actions y sus logs antes de afirmar éxito.
+Consultar https://github.com/wair0/W-FILE-MANAGER/actions para conocer el estado real de la ejecución más reciente. No asumir que una ejecución terminó bien por haber terminado una anterior. Verificar los logs y el listado de artefactos de la ejecución actual.
+
+El artefacto descargable debe llamarse `WFILEMANAGER` y contener exactamente los entregables esperados:
+- `WFILEMANAGER.APK`
+- `WFILEMANAGER.zip`
 
 ## Próximas tareas
 
-1. Consultar el estado real de la ejecución de GitHub Actions y examinar el error más reciente, si existe.
-2. Corregir los fallos de compilación en `main` con cambios funcionales, sin añadir commits de validación.
-3. Asegurar que el empaquetado produzca exactamente `WFILEMANAGER.APK` y `WFILEMANAGER.zip`.
-4. Verificar que el APK tenga `applicationId=com.wfilemanager.app`, que sea instalable y que arranque.
-5. Probar navegación WebView, CSS/JS offline, permisos, operaciones de archivos, editor TXT, imágenes y creación/extracción ZIP, incluyendo rutas maliciosas.
-6. Documentar claramente qué pruebas pasaron y cuáles requieren un dispositivo Android real.
+1. Confirmar que el workflow más reciente termina correctamente tras los cambios de nombre y CI.
+2. Comprobar que el artefacto se publica como `WFILEMANAGER`, sin `DELIVERABLES`, y que incluye los dos archivos con sus nombres exactos.
+3. Inspeccionar el APK generado: integridad del archivo, applicationId `com.wfilemanager.app`, firma y recursos web.
+4. Probar instalación y arranque en Android; no afirmar pruebas físicas si no se han realizado.
+5. Probar permisos concedidos/denegados/revocados y acceso al almacenamiento.
+6. Probar crear/copiar/mover/renombrar/eliminar/compartir/abrir archivos, editor TXT, visor de imágenes y ZIP.
+7. Probar ZIP con rutas maliciosas, nombres duplicados y entradas grandes o malformadas.
+8. Revisar y corregir cualquier fallo reproducible encontrado; mantener la compilación de GitHub Actions como verificación continua.
+9. Antes de una distribución pública, evaluar una clave de firma release propia y protegida. La configuración de debug sirve para pruebas, no para una identidad de actualización estable.
 
 ## Criterios de entrega
 
-- APK final llamado exactamente `WFILEMANAGER.APK`.
-- ZIP final llamado exactamente `WFILEMANAGER.zip`.
-- Identificador de paquete `com.wfilemanager.app`.
-- Iconos y recursos Android ubicados en sus directorios correspondientes.
-- Compilación confirmada en GitHub Actions y artefactos descargables.
-- No afirmar pruebas físicas en dispositivo si no se realizaron.
+- APK llamado exactamente `WFILEMANAGER.APK`.
+- ZIP de fuentes llamado exactamente `WFILEMANAGER.zip`.
+- Artefacto de Actions llamado `WFILEMANAGER`.
+- Identificador `com.wfilemanager.app`.
+- Recursos Android ubicados en los directorios correctos.
+- Compilación confirmada en la ejecución más reciente de GitHub Actions y artefactos descargables.
+- Pruebas funcionales documentadas, indicando qué se verificó en CI, emulador y dispositivo real.
