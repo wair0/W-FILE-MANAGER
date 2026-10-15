@@ -49,12 +49,21 @@ jobs:
             -x 'WFILEMANAGER.APK' \
             -x 'WFILEMANAGER.zip'
 
-      - name: Upload deliverables
+      # The installable artifact must contain only the APK. GitHub itself
+      # wraps each uploaded artifact in a ZIP, so uploading the source ZIP
+      # here would create a confusing ZIP-inside-a-ZIP download.
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
           name: WFILEMANAGER
-          path: |
-            WFILEMANAGER.APK
-            WFILEMANAGER.zip
+          path: WFILEMANAGER.APK
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload source package separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: WFILEMANAGER-SOURCE
+          path: WFILEMANAGER.zip
           if-no-files-found: error
           retention-days: 14
