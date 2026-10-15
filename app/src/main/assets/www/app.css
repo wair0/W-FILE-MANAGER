@@ -252,3 +252,11 @@ pre.pv{max-height:50vh;overflow:auto;background:rgba(0,0,0,.4);border:1px solid 
 .audio-art .ic{width:74px;height:74px}
 .audio-name{max-width:100%;font-size:15px;text-align:center;overflow-wrap:anywhere;color:var(--txt)}
 .audio-stage audio{width:min(100%,420px)}
+
+/* Miniaturas generadas para vídeos y PDF */
+.generated-thumb{width:100%;height:100%;object-fit:cover;background:#f7f7f7}
+.media-error{max-width:420px;text-align:center;color:#ff9aa9;font-size:13px;line-height:1.5}
+.video-stage{width:100%}
+.video-stage video{object-fit:contain}
+.audio-stage{align-items:center}
+.audio-stage audio{width:min(100%,420px)}
