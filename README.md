@@ -3,38 +3,42 @@
 Administrador de archivos para Android — **Kotlin + WebView offline** con interfaz HTML/CSS/JS de estilo *High-Tech corporativo / utopía futurista*.
 
 ## Funciones
-- Header con botón hamburguesa y menú lateral con **todas las secciones**; menú contextual (⋮) y barra inferior.
-- **Inicio**: almacenamiento (anillo + barras), acceso rápido por categorías, herramientas, dispositivos, favoritos, recientes y estado de permisos.
-- **Explorador**: lista/cuadrícula, migas de pan, ordenar, buscar, selección múltiple (pulsación larga), copiar / mover / pegar, renombrar, eliminar, nueva carpeta, propiedades, favoritos, compartir, abrir con…, archivos ocultos.
-- **Visor y extractor ZIP**: navegar dentro del ZIP, previsualizar texto/imágenes, extraer todo o selección (protección *zip-slip*), crear ZIP desde la selección.
-- **Visor / editor / creador TXT**: números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente, guardar / guardar como.
-- **Visor de imágenes**: galería, pellizcar para zoom, doble toque, deslizar para cambiar, compartir y eliminar.
-- Permisos: `MANAGE_EXTERNAL_STORAGE` (acceso total / administración de archivos), `READ/WRITE_EXTERNAL_STORAGE` y `READ_MEDIA_*` (almacenamiento interno).
+- Header con botón hamburguesa y menú lateral con todas las secciones, menú contextual y barra inferior.
+- Inicio con almacenamiento, accesos rápidos, herramientas, dispositivos, favoritos, recientes y estado de permisos.
+- Explorador con lista/cuadrícula, migas de pan, ordenar, buscar, selección múltiple, copiar/mover/pegar, renombrar, eliminar, carpetas, propiedades, favoritos, compartir, abrir con y archivos ocultos.
+- Visor y extractor ZIP, vista previa de texto/imágenes, extracción completa o selectiva con protección contra zip-slip y creación de ZIP.
+- Visor/editor/creador TXT con números de línea, deshacer, buscar, ajuste de línea, tamaño de fuente y guardar/guardar como.
+- Visor de imágenes con galería, zoom, cambio por deslizamiento, compartir y eliminar.
+- Permisos de almacenamiento adaptados a la versión de Android.
 
-## Compilar con GitHub (sin instalar nada)
-1. Crea un repositorio vacío en GitHub y sube **todo el contenido de este ZIP en la raíz** (puedes hacerlo con el conector de GitHub de ChatGPT).
-2. El workflow `.github/workflows/build.yml` se ejecuta solo en cada *push* (o manualmente en *Actions → Build W FILE MANAGER APK → Run workflow*).
-3. Al terminar, descarga el artefacto **W-FILE-MANAGER-apk** (contiene `app-debug.apk` y `app-release.apk`, ambos instalables).
+## Identidad de la aplicación
+- **Application ID / namespace:** `com.wfilemanager.app`
+- **APK de entrega:** `WFILEMANAGER.APK`
+- **Paquete de fuentes:** `WFILEMANAGER.zip`
 
-## Compilar en local
-```
-gradle assembleDebug          # requiere Gradle 8.7+, JDK 17 y Android SDK 34
-```
-(En Android Studio basta con abrir la carpeta; si quieres wrapper: `gradle wrapper --gradle-version 8.7`.)
+## Obtener los artefactos desde GitHub
+El workflow **Build W FILE MANAGER** compila las variantes debug y release en GitHub Actions y publica `WFILEMANAGER.APK` junto con `WFILEMANAGER.zip` como artefactos de la ejecución. Se ejecuta al hacer push a `main` o manualmente desde **Actions → Build W FILE MANAGER → Run workflow**.
 
-## Estructura
-```
-app/src/main/java/com/wairo/wfilemanager/  MainActivity.kt (WebView + puente JS) · FileOps.kt (operaciones de archivos)
-app/src/main/assets/www/                   index.html · css/app.css · js/app.js  (UI offline)
-preview/                                   mock + script para generar el HTML de vista previa en navegador
+## Compilación local opcional
+Requisitos: JDK 17, Android SDK 34 y Gradle 8.7.
+```bash
+gradle assembleDebug assembleRelease
 ```
 
-## Notas importantes sobre permisos
-- En Android 11+ el acceso total se concede en **Ajustes → Acceso a todos los archivos**; la app abre esa pantalla al pulsar *Conceder acceso total*.
-- Android sigue bloqueando a cualquier app las carpetas `Android/data` y `Android/obb` de otras aplicaciones (Android 11+/13+); es una restricción del sistema, no de la app.
-- `MANAGE_EXTERNAL_STORAGE` es válido para instalación directa (APK). Google Play exige una justificación para publicarlo.
-
-## Regenerar la vista previa HTML
+## Estructura principal
 ```
+app/src/main/java/com/wfilemanager/app/  MainActivity.kt · FileOps.kt
+app/src/main/assets/www/                index.html · app.css · app.js (interfaz offline)
+app/src/main/res/                       tema, FileProvider e icono adaptativo
+preview/                                mock + script para vista previa HTML
+```
+
+## Permisos y límites de Android
+- En Android 11+ el acceso total se concede desde **Ajustes → Acceso a todos los archivos**.
+- Android restringe las carpetas `Android/data` y `Android/obb` de otras aplicaciones; no es una limitación específica de esta app.
+- `MANAGE_EXTERNAL_STORAGE` es adecuado para instalación directa cuando el uso principal de la app justifica la administración de archivos; Google Play aplica requisitos específicos para publicarlo.
+
+## Regenerar la vista previa
+```bash
 python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 ```

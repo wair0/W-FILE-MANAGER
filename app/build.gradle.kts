@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.wairo.wfilemanager"
+    namespace = "com.wfilemanager.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.wairo.wfilemanager"
+        applicationId = "com.wfilemanager.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

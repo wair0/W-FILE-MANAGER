@@ -1,4 +1,4 @@
-package com.wairo.wfilemanager
+package com.wfilemanager.app
 
 import android.Manifest
 import android.annotation.SuppressLint

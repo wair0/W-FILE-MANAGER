@@ -1,4 +1,4 @@
-package com.wairo.wfilemanager
+package com.wfilemanager.app
 
 import android.content.Context
 import android.os.Environment
