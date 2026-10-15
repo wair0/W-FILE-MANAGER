@@ -46,7 +46,7 @@ preview/                                mock + script para vista previa HTML
 ## Seguridad y funcionamiento offline
 
 - La interfaz, CSS y JavaScript se cargan desde assets locales. La URL interna `wfile.local` solo sirve archivos del almacenamiento local; no habilita navegación web externa.
-- El servidor local de archivos admite solicitudes HTTP Range (206 Partial Content), necesarias para la reproducción y el avance dentro de audio/vídeo en WebView.
+- El endpoint local de archivos admite solicitudes HTTP Range (206 Partial Content). El reproductor integrado de audio/vídeo lee ahora el archivo local mediante URI `file://` para evitar bloqueos del pipeline multimedia de WebView.
 - La extracción ZIP valida rutas canónicas para evitar zip-slip y no sobrescribe archivos existentes en el destino.
 - La vista previa de entradas ZIP limita la lectura de datos cuyo tamaño no está declarado.
 - La comprobación de sintaxis JavaScript forma parte del proceso de CI.
