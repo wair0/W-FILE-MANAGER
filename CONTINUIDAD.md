@@ -200,7 +200,7 @@ Enlaces:
 ## Corrección multimedia — 2026-10-15
 
 - Se añadió un reproductor integrado para vídeo y audio, con controles nativos, indicador de error y acción para abrir con otra aplicación si el formato no es compatible.
-- Se conectaron las funciones Kotlin existentes `videoThumbnail` y `pdfThumbnail` con la interfaz: vídeos con fotograma y PDF con imagen de la primera página. Las imágenes mantienen su miniatura directa.
+- Se conectaron las funciones Kotlin existentes `videoThumbnail` y `pdfThumbnail` con la interfaz: vídeos con fotograma, PDF con imagen de la primera página e imágenes convertidas a miniaturas JPEG mediante Android nativo.
 - Se añadió caché de miniaturas en memoria y fallback a iconos cuando el archivo no se puede decodificar.
 - Se conservaron la pantalla Inicio y los cambios de navegación actuales.
 - Pendiente de validar: compilación de GitHub Actions y prueba real en Android, especialmente MP4/MP3, formatos menos comunes y PDFs protegidos o dañados.
