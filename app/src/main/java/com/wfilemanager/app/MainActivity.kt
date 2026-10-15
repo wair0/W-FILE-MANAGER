@@ -5,7 +5,6 @@ import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.role.RoleManager
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -53,7 +52,6 @@ class MainActivity : AppCompatActivity() {
     private val pool = Executors.newFixedThreadPool(4)
     private val mediaNotificationId = 4107
     private val mediaChannelId = "wfm_audio_playback"
-    private val filesRoleName = "android.app.role.FILES"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -302,7 +300,6 @@ class MainActivity : AppCompatActivity() {
         "open" -> { openFile(a.getString("path")); true }
         "playVideo" -> { playVideo(a.getString("path")); true }
         "mediaNotification" -> { runOnUiThread { updateMediaNotification(a.optString("title", "Audio"), a.optBoolean("playing"), a.optLong("duration"), a.optLong("position")) }; true }
-        "requestDefaultFileManager" -> { requestDefaultFileManager(); true }
         "imageThumbnail" -> imageThumbnail(a.getString("path"))
         "pdfThumbnail" -> pdfThumbnail(a.getString("path"))
         "videoThumbnail" -> videoThumbnail(a.getString("path"))
@@ -389,25 +386,6 @@ class MainActivity : AppCompatActivity() {
             getSystemService(NotificationManager::class.java).cancel(mediaNotificationId)
         } else {
             getSystemService(NotificationManager::class.java).notify(mediaNotificationId, builder.build())
-        }
-    }
-
-    private fun requestDefaultFileManager() {
-        if (Build.VERSION.SDK_INT >= 29) {
-            val roleManager = getSystemService(RoleManager::class.java)
-            if (roleManager != null && roleManager.isRoleAvailable(filesRoleName)) {
-                if (!roleManager.isRoleHeld(filesRoleName)) {
-                    startActivityForResult(roleManager.createRequestRoleIntent(filesRoleName), 4112)
-                } else {
-                    Toast.makeText(this, "W File Manager ya es el administrador de archivos predeterminado.", Toast.LENGTH_LONG).show()
-                }
-                return
-            }
-        }
-        try {
-            startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
-        } catch (_: Exception) {
-            startActivity(Intent(Settings.ACTION_SETTINGS))
         }
     }
 
