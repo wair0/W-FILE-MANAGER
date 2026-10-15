@@ -229,18 +229,23 @@ function listHtml(items,o){
 /* --- Inicio --- */
 function ring(pct){const r=42,c=2*Math.PI*r,d=c*pct/100;return `<div class="ring"><svg viewBox="0 0 100 100"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><circle class="bgc" cx="50" cy="50" r="${r}" fill="none" stroke-width="8"/><circle class="fg" cx="50" cy="50" r="${r}" fill="none" stroke-width="8" stroke-dasharray="${d.toFixed(1)} ${c.toFixed(1)}"/></svg><b>${Math.round(pct)}%</b></div>`}
 function vHome(v){
-  const r0=S.roots[0];
+  // Normalizar el historial persistido: instalaciones anteriores pueden contener
+  // entradas incompletas; una sola entrada antigua no debe romper toda la pantalla.
+  const recent=(Array.isArray(S.rec)?S.rec:[]).filter(it=>it&&typeof it==='object'&&typeof it.path==='string'&&typeof it.name==='string').slice(0,30);
+  S.rec=recent;
+  const roots=(Array.isArray(S.roots)?S.roots:[]).filter(r=>r&&typeof r.path==='string');
+  const favs=(Array.isArray(S.favs)?S.favs:[]).filter(f=>typeof f==='string');
   v.innerHTML=`
   <div class="stitle recent-home-title">Recientes<span class="sp"></span><button data-h="go:recent">VER TODO</button></div>
-  ${S.rec.length?`<div class="recent-strip">${S.rec.slice(0,12).map((it,i)=>`<button class="recent-card" data-ri="${i}"><div class="recent-thumb">${thumbOf(it)}</div><span>${esc(it.name)}</span><small>${fdt(it.mtime)}</small></button>`).join('')}</div>`:'<div class="empty recent-empty">SIN ACTIVIDAD RECIENTE</div>'}
+  ${recent.length?`<div class="recent-strip">${recent.slice(0,12).map((it,i)=>`<button class="recent-card" data-ri="${i}"><div class="recent-thumb">${thumbOf(it)}</div><span>${esc(it.name)}</span><small>${fdt(it.mtime)}</small></button>`).join('')}</div>`:'<div class="empty recent-empty">SIN ACTIVIDAD RECIENTE</div>'}
   <div class="stitle">Acceso rápido</div>
   <div class="tiles">
    <button class="tile" data-h="cat:image">${ico('image','k-image')}Imágenes</button><button class="tile" data-h="cat:video">${ico('video','k-video')}Videos</button>
    <button class="tile" data-h="cat:audio">${ico('music','k-audio')}Audio</button><button class="tile" data-h="dir:Download">${ico('download','k-text')}Descargas</button></div>
   <div class="stitle">Dispositivos</div>
-  <div class="list">${S.roots.map((r,i)=>`<div class="row" data-r="${i}"><div class="thumb">${ico('hdd','k-doc')}</div><div class="info"><div class="nm">${esc(r.name)}</div>
-   <div class="sub">${fsz(r.total-r.free)} usados de ${fsz(r.total)}</div><div class="bar" style="margin-top:6px"><i style="width:${r.total?(r.total-r.free)/r.total*100:0}%"></i></div></div>${ico('chev')}</div>`).join('')||'<div class="empty">Cargando…</div>'}</div>
-  ${S.favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${S.favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}`;
+  <div class="list">${roots.map((r,i)=>{const total=Math.max(0,Number(r.total)||0),free=Math.max(0,Number(r.free)||0),used=Math.max(0,total-free),pct=total?Math.min(100,used/total*100):0;return `<div class="row" data-r="${i}"><div class="thumb">${ico('hdd','k-doc')}</div><div class="info"><div class="nm">${esc(r.name||'Almacenamiento')}</div>
+   <div class="sub">${fsz(used)} usados de ${fsz(total)}</div><div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div></div>${ico('chev')}</div>`}).join('')||'<div class="empty">Cargando almacenamiento…</div>'}</div>
+  ${favs.length?`<div class="stitle">Favoritos<span class="sp"></span><button data-h="go:favs">VER TODO</button></div><div class="chips">${favs.slice(0,10).map((f,i)=>`<button class="chip" data-f="${i}">${ico('star','star')}${esc(bn(f))}</button>`).join('')}</div>`:''}`;
   v.dataset.list='rec';
   hydratePdfThumbs(v);
 }
