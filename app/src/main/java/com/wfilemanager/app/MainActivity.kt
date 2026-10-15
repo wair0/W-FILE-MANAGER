@@ -229,16 +229,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shareFiles(paths: JSONArray) {
-        val uris = ArrayList<Uri>()
+        // Mantener solo archivos reales y usar esa misma lista para URI y MIME.
+        // Así una carpeta seleccionada antes que un archivo no altera el tipo compartido.
+        val files = ArrayList<File>()
         for (i in 0 until paths.length()) {
             val f = File(paths.getString(i))
-            if (f.isFile) uris.add(uriFor(f))
+            if (f.isFile && f.canRead()) files.add(f)
         }
-        if (uris.isEmpty()) throw IllegalStateException("Solo se pueden compartir archivos (no carpetas)")
+        if (files.isEmpty()) throw IllegalStateException("Solo se pueden compartir archivos (no carpetas)")
+        val uris = ArrayList<Uri>()
+        files.forEach { uris.add(uriFor(it)) }
         val intent = if (uris.size == 1) {
             Intent(Intent.ACTION_SEND).apply {
                 putExtra(Intent.EXTRA_STREAM, uris[0])
-                type = FileOps.mime(File(paths.getString(0)).name)
+                type = FileOps.mime(files[0].name)
             }
         } else {
             Intent(Intent.ACTION_SEND_MULTIPLE).apply {
