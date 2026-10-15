@@ -414,7 +414,7 @@ async function openItem(it,list){
   if(it.dir){return openPath(it.path)}
   pushRecent(it);
   if(k==='image'){const imgs=list.filter(x=>kind(x)==='image');return openViewer(imgs,imgs.findIndex(x=>x.path===it.path))}
-  if(k==='video'||k==='audio')return openMedia(it,k);
+  if(k==='video'||k==='audio')return openMedia(it,k,list);
   if(k==='zip'&&ex(it.name)!=='apk'&&['zip','jar'].includes(ex(it.name)))return openZip(it.path);
   if(k==='text')return openEditor(it.path);
   try{await api('open',{path:it.path})}catch(e){fail(e)}
@@ -471,8 +471,12 @@ function ctxMenu(){
 function sortMenu(){sheet('Ordenar por',[['name','Nombre'],['date','Fecha'],['size','Tamaño'],['type','Tipo']].map(s=>({i:'sort',t:s[1]+(S.sort===s[0]?(S.asc?'  ↑':'  ↓'):''),f:()=>{if(S.sort===s[0])S.asc=!S.asc;else{S.sort=s[0];S.asc=true}store.set('sort',S.sort);store.set('asc',S.asc);refreshAll()}})))}
 
 /* ================= Reproductor multimedia integrado ================= */
-function openMedia(it,type){
+let audioQueue=[],audioQueueIndex=0;
+function openMedia(it,type,list=[]){
   if(type==='video'){api('playVideo',{path:it.path}).catch(fail);return}
+  audioQueue=(Array.isArray(list)?list:[]).filter(x=>!x.dir&&kind(x)==='audio');
+  if(!audioQueue.some(x=>x.path===it.path))audioQueue.unshift(it);
+  audioQueueIndex=Math.max(0,audioQueue.findIndex(x=>x.path===it.path));
   const el=$('#viewer'),video=false,src=furl(it.path);
   el.hidden=false;el.classList.remove('hide-ui');
   el.innerHTML=`<div class="vtop"><button class="ib" data-media="close">${ico('back')}</button><span class="nm">${esc(it.name)}</span><button class="ib" data-media="external">${ico('ext')}</button></div>
@@ -487,7 +491,7 @@ function openMedia(it,type){
   media.addEventListener('loadedmetadata',()=>{err.hidden=true;notify(!media.paused)});
   media.addEventListener('play',()=>notify(true));
   media.addEventListener('pause',()=>notify(false));
-  media.addEventListener('ended',()=>{notify(false);try{if(window.WBridge)WBridge.mediaNotification(it.name,false,0,0)}catch(_){}});
+  media.addEventListener('ended',()=>{notify(false);if(audioQueue.length>1)playQueueTrack(1);else try{if(window.WBridge)WBridge.dismissMediaNotification()}catch(_){}});
   media.addEventListener('timeupdate',()=>{if(Math.floor(media.currentTime)%5===0)notify(!media.paused)});
   media.play().catch(()=>{});
   el.querySelector('[data-media="close"]').onclick=closeViewer;
@@ -497,6 +501,11 @@ function openMedia(it,type){
 const V={list:[],i:0,s:1,x:0,y:0,ui:true};
 function openViewer(list,i){V.list=list;V.i=Math.max(0,i);V.s=1;V.x=0;V.y=0;V.ui=true;const el=$('#viewer');el.hidden=false;el.classList.remove('hide-ui');drawViewer()}
 function closeViewer(){$('#viewer').hidden=true;$('#viewer').innerHTML=''}
+function playQueueTrack(delta){
+  if(!audioQueue.length)return;
+  audioQueueIndex=(audioQueueIndex+delta+audioQueue.length)%audioQueue.length;
+  openMedia(audioQueue[audioQueueIndex],'audio',audioQueue);
+}
 function vSrc(it){return it.src||furl(it.path)}
 function drawViewer(){
   const it=V.list[V.i],el=$('#viewer');
@@ -669,7 +678,20 @@ window.WFM={
     return false;
   },
   async onResume(){await refreshPerm();if(S.perm.all){if(S.sec==='home')loadHome();else if(S.reload)S.reload()}},
-  mediaCommand(command){const media=$('#media-element');if(!media)return;if(command==='pause')media.pause();else if(command==='play')media.play().catch(()=>{})},
+  mediaCommand(command){
+    const media=$('#media-element');
+    if(command==='close'){
+      closeViewer();
+      try{if(window.WBridge&&WBridge.dismissMediaNotification)WBridge.dismissMediaNotification()}catch(_){}
+      audioQueue=[];audioQueueIndex=0;
+      return;
+    }
+    if(command==='next'){playQueueTrack(1);return}
+    if(command==='previous'){playQueueTrack(-1);return}
+    if(!media)return;
+    if(command==='pause')media.pause();
+    else if(command==='play')media.play().catch(()=>{});
+  },
 };
 
 /* ================= Arranque ================= */
