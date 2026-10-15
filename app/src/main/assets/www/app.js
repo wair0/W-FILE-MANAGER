@@ -180,7 +180,7 @@ function render(){
   const v=$('#view');
   const fn={home:vHome,files:vFiles,cat:vFiles,zip:vZip,txt:vTxt,recent:vRecent,favs:vFavs,settings:vSettings,about:vAbout}[S.sec];
   v.style.padding=edit?'0':'';v.style.overflow=edit?'hidden':'';const st=v.scrollTop;fn(v);v.scrollTop=st;
-  hydratePdfThumbs(v);bars();
+  hydratePdfThumbs(v);hydrateVideoThumbs(v);bars();
 }
 function bars(){
   const sb=$('#selbar'),cb=$('#clipbar');
@@ -198,6 +198,7 @@ function thumbOf(it,big){
   const k=kind(it);
   if(k==='image')return `<img loading="lazy" decoding="async" src="${furl(it.path)}" alt="">`;
   if(!it.dir&&ex(it.name)==='pdf')return `<span class="pdf-mark">PDF</span><img class="pdf-page" data-pdf="${esc(it.path)}" alt="" hidden>`;
+  if(!it.dir&&k==='video')return `<span class="video-mark">${ico('video','k-video')}</span><img data-video="${esc(it.path)}" alt="" hidden>`;
   return ico(KI[k],'k-'+k);
 }
 function hydratePdfThumbs(scope){
@@ -207,6 +208,17 @@ function hydratePdfThumbs(scope){
       if(!pdfThumbCache.has(p))pdfThumbCache.set(p,api('pdfThumbnail',{path:p}).then(r=>'data:image/jpeg;base64,'+r.b64).catch(()=>null));
       const src=await pdfThumbCache.get(p);if(!src||!im.isConnected)return;
       im.src=src;im.hidden=false;const mark=im.parentElement.querySelector('.pdf-mark');if(mark)mark.hidden=true;
+    }catch(e){}
+  });
+}
+const videoThumbCache=new Map();
+function hydrateVideoThumbs(scope){
+  (scope||document).querySelectorAll('img[data-video]').forEach(async im=>{
+    const p=im.dataset.video;if(!p)return;
+    try{
+      if(!videoThumbCache.has(p))videoThumbCache.set(p,api('videoThumbnail',{path:p}).then(r=>'data:image/jpeg;base64,'+r.b64).catch(()=>null));
+      const src=await videoThumbCache.get(p);if(!src||!im.isConnected)return;
+      im.src=src;im.hidden=false;const mark=im.parentElement.querySelector('.video-mark');if(mark)mark.hidden=true;
     }catch(e){}
   });
 }
@@ -304,7 +316,7 @@ function vZipOpen(v){
   <div class="btns" style="margin-bottom:12px"><button class="btn solid" data-z="ext">${ico('download')} Extraer todo</button><button class="btn" data-z="extsel" ${z.sel.size?'':'disabled style="opacity:.4"'}>Selección (${z.sel.size})</button><button class="btn vio" data-z="close">${ico('x')} Cerrar</button></div>
   <div class="card bc"><button data-zb="">${esc(bn(z.path))}</button>${segs.map(s=>{acc+=s+'/';return `${ico('chev')}<button data-zb="${esc(acc)}">${esc(s)}</button>`}).join('')}</div>
   <div class="list">${list.map((e,i)=>`<div class="row ${z.sel.has(e.full)?'sel':''}" data-zi="${i}"><div class="ck" data-zck="${i}" style="${z.sel.has(e.full)?'':'color:transparent'}">${ico('check')}</div><div class="thumb">${ico(e.dir?'folder':KI[kind({name:e.name})],'k-'+(e.dir?'folder':kind({name:e.name})))}</div>
-   <div class="info"><div class="nm">${esc(e.name)}</div><div class="sub">${e.dir?'carpeta':fsz(e.size)+(e.csize>=0?' · comp. '+fsz(e.csize):'')}</div></div>${ico('chev')}</div>`).join('')||'<div class="empty">ZIP VACÍO</div>'}</div>`;
+   <div class="info"><div class="nm">${esc(e.name)}</div><div class="sub">${e.dir?'carpeta':ex(e.name)==='apk'?'Tocar para instalar APK':fsz(e.size)+(e.csize>=0?' · comp. '+fsz(e.csize):'')}</div></div>${ico('chev')}</div>`).join('')||'<div class="empty">ZIP VACÍO</div>'}</div>`;
   v.dataset.list='';
 }
 async function openZip(path){
@@ -581,7 +593,7 @@ view.addEventListener('click',async e=>{
     if(a==='extsel'&&S.zip.sel.size)return zipExtract([...S.zip.sel]);return}
   if(b=t.closest('[data-zb]')){S.zip.cwd=b.dataset.zb;return render()}
   if(b=t.closest('[data-zck]')){const e2=S.zip.list[+b.dataset.zck];S.zip.sel.has(e2.full)?S.zip.sel.delete(e2.full):S.zip.sel.add(e2.full);return render()}
-  if(b=t.closest('[data-zi]')){const e2=S.zip.list[+b.dataset.zi];if(e2.dir){S.zip.cwd=e2.full;return render()}return zipPreview(e2)}
+  if(b=t.closest('[data-zi]')){const e2=S.zip.list[+b.dataset.zi];if(e2.dir){S.zip.cwd=e2.full;return render()}if(ex(e2.name)==='apk')return api('zipInstallApk',{path:S.zip.path,entry:e2.full}).then(()=>toast('Abriendo instalador de Android…')).catch(fail);return zipPreview(e2)}
   if(b=t.closest('[data-t]')){const a=b.dataset.t;if(a==='new')return openEditor(null,root()+'/Documents');if(a==='find'){S.txts=null;render();return loadTxts()}return}
   if(b=t.closest('[data-e]')){const a=b.dataset.e,ta=$('#ta');
     if(a==='back')return closeEditor();if(a==='save')return saveEditor();
