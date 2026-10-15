@@ -255,6 +255,10 @@ class MainActivity : AppCompatActivity() {
         fun mediaNotification(title: String, playing: Boolean, duration: Long, position: Long) {
             runOnUiThread { updateMediaNotification(title, playing, duration, position) }
         }
+        @JavascriptInterface
+        fun dismissMediaNotification() {
+            runOnUiThread { getSystemService(NotificationManager::class.java).cancel(mediaNotificationId) }
+        }
 
         @JavascriptInterface
         fun call(id: Int, method: String, args: String) {
@@ -403,11 +407,9 @@ class MainActivity : AppCompatActivity() {
             )
             .addAction(android.R.drawable.ic_media_next, "Siguiente", action("next", 4113))
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cerrar", action("close", 4114))
-        if (!playing && position <= 0L) {
-            getSystemService(NotificationManager::class.java).cancel(mediaNotificationId)
-        } else {
-            getSystemService(NotificationManager::class.java).notify(mediaNotificationId, builder.build())
-        }
+        // Mantener los controles visibles aunque la pista esté pausada al segundo cero.
+        // La acción explícita "Cerrar" es la que elimina la notificación.
+        getSystemService(NotificationManager::class.java).notify(mediaNotificationId, builder.build())
     }
 
     private fun imageThumbnail(path: String): JSONObject {
