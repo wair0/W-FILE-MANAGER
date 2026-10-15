@@ -196,9 +196,8 @@ function bars(){
 const thumbCache=new Map();
 function thumbOf(it,big){
   const k=kind(it),e=ex(it.name);
-  if(k==='image')return `<img loading="lazy" decoding="async" src="${furl(it.path)}" alt="">`;
-  if(k==='video'||(k==='doc'&&e==='pdf')){
-    const t=k==='video'?'video':'pdf';
+  if(k==='image'||k==='video'||(k==='doc'&&e==='pdf')){
+    const t=k==='image'?'image':k==='video'?'video':'pdf';
     return `<img class="generated-thumb" loading="lazy" decoding="async" data-thumb-kind="${t}" data-thumb-path="${esc(it.path)}" alt="" hidden>${ico(KI[k],'k-'+k)}`;
   }
   return ico(KI[k],'k-'+k);
@@ -211,7 +210,8 @@ async function hydrateThumbs(){
     try{
       let src=thumbCache.get(key);
       if(!src){
-        const r=await api(kind==='video'?'videoThumbnail':'pdfThumbnail',{path});
+        const method=kind==='video'?'videoThumbnail':kind==='pdf'?'pdfThumbnail':'imageThumbnail';
+        const r=await api(method,{path});
         if(!r||!r.b64)throw new Error('Miniatura vacía');
         src='data:image/jpeg;base64,'+r.b64;thumbCache.set(key,src);
       }
