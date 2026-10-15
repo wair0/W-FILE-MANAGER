@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
+import android.media.MediaMetadataRetriever
 import android.os.ParcelFileDescriptor
 import android.util.Base64
 import java.io.ByteArrayOutputStream
@@ -272,6 +273,8 @@ class MainActivity : AppCompatActivity() {
         "zipCreate" -> FileOps.zipCreate(a.getJSONArray("paths"), a.getString("dest"), a.getString("name"))
         "open" -> { openFile(a.getString("path")); true }
         "pdfThumbnail" -> pdfThumbnail(a.getString("path"))
+        "videoThumbnail" -> videoThumbnail(a.getString("path"))
+        "zipInstallApk" -> { installApkFromZip(a.getString("path"), a.getString("entry")); true }
         "share" -> { shareFiles(a.getJSONArray("paths")); true }
         else -> throw IllegalArgumentException("Método desconocido: $m")
     }
@@ -299,6 +302,77 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return JSONObject().put("b64", encoded)
+    }
+
+    private fun videoThumbnail(path: String): JSONObject {
+        val file = File(path)
+        if (!file.isFile || !file.canRead()) throw IllegalArgumentException("Vídeo no disponible")
+        val retriever = MediaMetadataRetriever()
+        val bitmap = try {
+            retriever.setDataSource(file.absolutePath)
+            retriever.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                ?: retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST)
+                ?: throw IllegalStateException("No se pudo generar la miniatura del vídeo")
+        } finally {
+            retriever.release()
+        }
+        return try {
+            val width = 320
+            val height = maxOf(1, (width.toFloat() * bitmap.height / bitmap.width).toInt())
+            val scaled = Bitmap.createScaledBitmap(bitmap, width, height, true)
+            if (scaled !== bitmap) bitmap.recycle()
+            ByteArrayOutputStream().use { out ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, 78, out)
+                scaled.recycle()
+                JSONObject().put("b64", Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP))
+            }
+        } catch (t: Throwable) {
+            if (!bitmap.isRecycled) bitmap.recycle()
+            throw t
+        }
+    }
+
+    private fun installApkFromZip(zipPath: String, entryName: String) {
+        if (!entryName.lowercase().endsWith(".apk") || entryName.endsWith("/")) {
+            throw IllegalArgumentException("La entrada seleccionada no es un APK")
+        }
+        val tempDir = File(cacheDir, "zip-apk").apply {
+            if (!exists() && !mkdirs()) throw IllegalStateException("No se pudo preparar el instalador")
+        }
+        val outFile = File.createTempFile("wfm-install-", ".apk", tempDir)
+        try {
+            java.util.zip.ZipFile(zipPath).use { zip ->
+                val entry = zip.getEntry(entryName) ?: throw IllegalArgumentException("No se encontró el APK dentro del ZIP")
+                if (entry.isDirectory) throw IllegalArgumentException("La entrada no es un archivo")
+                var copied = 0L
+                zip.getInputStream(entry).use { input ->
+                    outFile.outputStream().buffered().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            copied += count
+                            if (copied > 700L * 1024L * 1024L) throw IllegalArgumentException("El APK supera el límite de 700 MB")
+                            output.write(buffer, 0, count)
+                        }
+                    }
+                }
+            }
+            if (outFile.length() == 0L) throw IllegalArgumentException("El APK está vacío")
+            val uri = uriFor(outFile)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            try {
+                startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                throw IllegalStateException("Android no encontró el instalador de paquetes")
+            }
+        } catch (t: Throwable) {
+            outFile.delete()
+            throw t
+        }
     }
 
     private fun uriFor(f: File): Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", f)
