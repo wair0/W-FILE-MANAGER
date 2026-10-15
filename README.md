@@ -90,3 +90,10 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - Se añadieron miniaturas locales de video con `MediaMetadataRetriever` y carga bajo demanda en la interfaz.
 - Estos cambios están registrados en los commits [a0289cc](https://github.com/wair0/W-FILE-MANAGER/commit/a0289cc8d279887ec92dd67ef33831ba9734e47a), [44ed4c8](https://github.com/wair0/W-FILE-MANAGER/commit/44ed4c861445f91159a904fba427f8124fd8b7a0) y [cfe990e](https://github.com/wair0/W-FILE-MANAGER/commit/cfe990e9f9d8e4818018054e16cb9bb3660992fc).
 - La compilación de esos cambios y las pruebas en dispositivo deben confirmarse antes de considerar validada la entrega.
+
+## Menú contextual por pulsación larga (2026-10-15)
+
+- Mantener presionado un archivo o carpeta en listas y cuadrículas abre el menú contextual del elemento.
+- El menú ofrece acciones según el tipo: abrir, editar texto, ver contenido ZIP, extraer, copiar, mover, renombrar, comprimir, compartir, favoritos, propiedades y eliminar.
+- En escritorio, el clic secundario sobre un elemento también abre el menú contextual.
+- Pendiente de validar en dispositivo: pulsación larga, cancelación del gesto y acciones para ZIP y otros tipos de archivo.
