@@ -195,3 +195,12 @@ Enlaces:
 - Para ZIP/JAR, el menú ya incluye **Ver contenido ZIP** y **Extraer aquí**; para archivos compatibles incluye **Compartir**. También mantiene copiar/mover, renombrar, comprimir, favoritos, propiedades y eliminar.
 - CI y prueba en dispositivo no confirmados todavía. Verificar especialmente que el gesto no interfiera con el toque normal para abrir, con selección múltiple, cuadrícula y listas de Recientes/Favoritos.
 - Commit: https://github.com/wair0/W-FILE-MANAGER/commit/8321f16415c51dc0e54a3944d9324d9c1ecb00ad
+
+
+## Corrección multimedia — 2026-10-15
+
+- Se añadió un reproductor integrado para vídeo y audio, con controles nativos, indicador de error y acción para abrir con otra aplicación si el formato no es compatible.
+- Se conectaron las funciones Kotlin existentes `videoThumbnail` y `pdfThumbnail` con la interfaz: vídeos con fotograma y PDF con imagen de la primera página. Las imágenes mantienen su miniatura directa.
+- Se añadió caché de miniaturas en memoria y fallback a iconos cuando el archivo no se puede decodificar.
+- Se conservaron la pantalla Inicio y los cambios de navegación actuales.
+- Pendiente de validar: compilación de GitHub Actions y prueba real en Android, especialmente MP4/MP3, formatos menos comunes y PDFs protegidos o dañados.
