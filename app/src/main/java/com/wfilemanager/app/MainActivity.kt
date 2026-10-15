@@ -144,10 +144,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestAllPermissions() {
+        // Android 11+ usa el permiso especial de administración de archivos.
+        // No debemos bloquear su solicitud esperando permisos de medios, que son independientes.
+        if (Build.VERSION.SDK_INT >= 30) {
+            requestAllFiles()
+            return
+        }
         if (!hasRuntime()) {
             ActivityCompat.requestPermissions(this, runtimePerms(), 100)
-        } else {
-            requestAllFiles()
         }
     }
 
