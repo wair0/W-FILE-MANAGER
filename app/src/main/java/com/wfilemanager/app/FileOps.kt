@@ -7,6 +7,7 @@ import android.util.Base64
 import android.webkit.MimeTypeMap
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.util.zip.ZipEntry
@@ -274,7 +275,21 @@ object FileOps {
             val isImg = ext(entry) in IMG
             val limit = if (isImg) 12L * 1024 * 1024 else 1L * 1024 * 1024
             if (e.size > limit) throw IOException("Entrada demasiado grande para previsualizar")
-            val bytes = z.getInputStream(e).use { it.readBytes() }
+            // No confiar en e.size: algunas entradas ZIP declaran tamaño desconocido.
+            // Leer con límite también evita consumir memoria sin control con ZIPs maliciosos.
+            val bytes = z.getInputStream(e).use { input ->
+                val out = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var total = 0L
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    if (total > limit) throw IOException("Entrada demasiado grande para previsualizar")
+                    out.write(buffer, 0, count)
+                }
+                out.toByteArray()
+            }
             return if (isImg) {
                 JSONObject().put("b64", Base64.encodeToString(bytes, Base64.NO_WRAP)).put("mime", mime(entry))
             } else {
