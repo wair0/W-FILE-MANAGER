@@ -129,3 +129,19 @@ El artefacto instalable `WFILEMANAGER` debe contener únicamente `WFILEMANAGER.A
 2. Instalar el APK recién generado y comprobar Inicio con historial vacío, normal y con datos guardados antiguos.
 3. Probar reproducción y seek de audio/vídeo local; si falla, revisar el MIME de cada extensión en `FileOps.mime()` y los logs de WebView.
 4. No considerar corregido el problema en dispositivo hasta completar esas pruebas.
+
+
+## Seguimiento adicional — 2026-10-15
+
+### Restauración de Inicio
+- Se restauró `vHome()` íntegramente desde la versión anterior a la modificación que intentó endurecer la pantalla (`4b20386`), para volver al renderizado original en vez de seguir alterándolo.
+
+### Medios que quedaban cargando
+- El endpoint `wfile.local` con `shouldInterceptRequest` no estaba dando un resultado funcional en el reproductor de la WebView, incluso tras añadir respuesta parcial.
+- El reproductor de audio/vídeo ahora usa una URI `file://` local para que Chromium acceda directamente al archivo con `allowFileAccess=true`, evitando el interceptor HTTP en el pipeline multimedia.
+- Se añadió un manejador de error multimedia que muestra mensajes distintos para error de lectura, formato y códec no compatible.
+- Commit: `caacfbd` — `RESTORE ORIGINAL HOME AND FIX LOCAL MEDIA SOURCE`.
+
+### Validación pendiente
+- Confirmar en el dispositivo que Inicio vuelve a su aspecto y comportamiento original.
+- Probar MP4 y MP3 locales. Algunos archivos MKV/AVI u otros contenedores pueden depender de códecs que Android/WebView no incluye; en esos casos el mensaje debe indicar incompatibilidad y se puede usar «Abrir con…».
