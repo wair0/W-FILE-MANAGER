@@ -295,7 +295,7 @@ class MainActivity : AppCompatActivity() {
         "zipCreate" -> FileOps.zipCreate(a.getJSONArray("paths"), a.getString("dest"), a.getString("name"))
         "open" -> { openFile(a.getString("path")); true }
         "playVideo" -> { playVideo(a.getString("path")); true }
-        "mediaNotification" -> { updateMediaNotification(a.optString("title", "Audio"), a.optBoolean("playing"), a.optLong("duration"), a.optLong("position")); true }
+        "mediaNotification" -> { runOnUiThread { updateMediaNotification(a.optString("title", "Audio"), a.optBoolean("playing"), a.optLong("duration"), a.optLong("position")) }; true }
         "requestDefaultFileManager" -> { requestDefaultFileManager(); true }
         "imageThumbnail" -> imageThumbnail(a.getString("path"))
         "pdfThumbnail" -> pdfThumbnail(a.getString("path"))
