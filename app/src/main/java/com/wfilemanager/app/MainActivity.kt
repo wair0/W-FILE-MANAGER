@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.provider.OpenableColumns
+import android.provider.MediaStore
 import android.graphics.Color
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -150,49 +151,84 @@ class MainActivity : AppCompatActivity() {
             handledIncomingUri = key
         }
         pool.execute {
+            var temporaryCopy: File? = null
             try {
-                val displayName = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-                    ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
-                    ?.takeIf { it.isNotBlank() }
-                    ?: uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':')
-                    ?: "download.zip"
-                val safeName = File(displayName).name.let {
-                    if (it.lowercase().endsWith(".zip")) it else throw IllegalArgumentException("El archivo recibido no parece ser un ZIP")
+                // Chrome puede entregar un content:// que ya apunta a Descargas.
+                // Resolver el original primero evita crear «ejemplo (1).zip» al abrirlo.
+                var displayName: String? = null
+                var providerPath: String? = null
+                try {
+                    contentResolver.query(
+                        uri,
+                        arrayOf(OpenableColumns.DISPLAY_NAME, MediaStore.MediaColumns.DATA),
+                        null, null, null
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            if (nameIndex >= 0) displayName = cursor.getString(nameIndex)
+                            val pathIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
+                            if (pathIndex >= 0) providerPath = cursor.getString(pathIndex)
+                        }
+                    }
+                } catch (_: Throwable) {
+                    try {
+                        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                            ?.use { cursor -> if (cursor.moveToFirst()) displayName = cursor.getString(0) }
+                    } catch (_: Throwable) { }
                 }
-                val downloads = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath)
-                val canUseDownloads = (Build.VERSION.SDK_INT >= 30 && Environment.isExternalStorageManager()) ||
-                    (Build.VERSION.SDK_INT < 30 && downloads.canWrite())
-                val destinationDir = if (canUseDownloads) downloads else File(cacheDir, "incoming-zips")
-                if (!destinationDir.exists() && !destinationDir.mkdirs()) {
-                    throw IllegalStateException("No se pudo preparar la carpeta para abrir el ZIP")
+
+                if (displayName.isNullOrBlank()) {
+                    displayName = uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':') ?: "download.zip"
                 }
-                var destination = File(destinationDir, safeName)
-                var suffix = 1
-                while (destination.exists()) {
-                    val stem = safeName.removeSuffix(".zip")
-                    destination = File(destinationDir, "$stem ($suffix).zip")
-                    suffix++
+                val safeName = File(displayName!!).name
+                if (!safeName.lowercase().endsWith(".zip")) {
+                    throw IllegalArgumentException("El archivo recibido no parece ser un ZIP")
                 }
-                val input = if (uri.scheme == "file") {
-                    val source = File(uri.path ?: throw IllegalArgumentException("Ruta del ZIP no válida"))
-                    FileInputStream(source)
+
+                val original = when {
+                    uri.scheme == "file" -> uri.path?.let { File(it) }
+                    !providerPath.isNullOrBlank() -> File(providerPath!!)
+                    else -> null
+                }?.takeIf { it.isFile && it.canRead() && it.length() > 0L }
+
+                val zipFile = if (original != null) {
+                    original
                 } else {
-                    contentResolver.openInputStream(uri) ?: throw IllegalStateException("Chrome no permitió leer el archivo descargado")
+                    // Si el proveedor no revela una ruta local, la copia va a caché privada,
+                    // nunca a Descargas, para no duplicar el archivo visible del usuario.
+                    val destinationDir = File(cacheDir, "incoming-zips")
+                    if (!destinationDir.exists() && !destinationDir.mkdirs()) {
+                        throw IllegalStateException("No se pudo preparar la carpeta temporal para abrir el ZIP")
+                    }
+                    var destination = File(destinationDir, safeName)
+                    var suffix = 1
+                    while (destination.exists()) {
+                        val stem = safeName.removeSuffix(".zip")
+                        destination = File(destinationDir, "$stem ($suffix).zip")
+                        suffix++
+                    }
+                    temporaryCopy = destination
+                    val input = if (uri.scheme == "file") {
+                        FileInputStream(File(uri.path ?: throw IllegalArgumentException("Ruta del ZIP no válida")))
+                    } else {
+                        contentResolver.openInputStream(uri)
+                            ?: throw IllegalStateException("Chrome no permitió leer el archivo descargado")
+                    }
+                    input.use { ins -> destination.outputStream().buffered().use { out -> ins.copyTo(out) } }
+                    if (destination.length() == 0L) throw IllegalArgumentException("El ZIP descargado está vacío")
+                    destination
                 }
-                input.use { ins -> destination.outputStream().buffered().use { out -> ins.copyTo(out) } }
-                if (destination.length() == 0L) {
-                    destination.delete()
-                    throw IllegalArgumentException("El ZIP descargado está vacío")
-                }
+
                 runOnUiThread {
                     if (!isDestroyed) {
                         web.evaluateJavascript(
-                            "window.WFM && WFM.openExternalZip && WFM.openExternalZip(" + JSONObject.quote(destination.absolutePath) + ")",
+                            "window.WFM && WFM.openExternalZip && WFM.openExternalZip(" + JSONObject.quote(zipFile.absolutePath) + ")",
                             null
                         )
                     }
                 }
             } catch (t: Throwable) {
+                temporaryCopy?.delete()
                 synchronized(this) { if (handledIncomingUri == key) handledIncomingUri = null }
                 runOnUiThread {
                     if (!isDestroyed) Toast.makeText(this, t.message ?: "No se pudo abrir el ZIP recibido", Toast.LENGTH_LONG).show()
