@@ -144,3 +144,10 @@ python3 preview/build_preview.py W_FILE_MANAGER_preview.html
 - Al tocar una entrada `.apk` dentro del visor ZIP, W FILE MANAGER solicita confirmación y extrae esa entrada a un archivo temporal privado, para abrir después el instalador de paquetes de Android mediante `FileProvider`.
 - Android exige que el usuario habilite «Permitir desde esta fuente» para W FILE MANAGER en los ajustes de instalación de aplicaciones desconocidas. Si el permiso no está concedido, la app abre esa pantalla y explica que hay que volver a tocar el APK al regresar.
 - W FILE MANAGER no instala aplicaciones silenciosamente ni elude las confirmaciones de seguridad de Android; la instalación final siempre la controla el sistema.
+
+
+### Correcciones del visor ZIP (2026-10-16)
+
+- Al abrir un ZIP externo, W FILE MANAGER intenta resolver la ruta del archivo original entregada por Android y lo abre directamente. Ya no copia automáticamente un ZIP existente de Descargas a otra entrada con sufijo.
+- Si el proveedor no expone una ruta local, la copia necesaria para el visor se guarda en la caché privada de la app, no en Descargas.
+- El botón Atrás y el botón «Cerrar» del visor vuelven a la lista de ZIP y vuelven a cargarla cuando aún no estaba inicializada (caso de apertura directa desde Chrome).
