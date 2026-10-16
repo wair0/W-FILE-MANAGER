@@ -312,15 +312,31 @@ function vZipOpen(v){
   v.dataset.list='';
 }
 function closeZipViewer(){
+  const returnTo=S.zip&&S.zip.returnTo;
   S.zip=null;
-  // Si se abrió directamente desde Chrome, la lista puede no haberse cargado aún.
-  S.zips=null;
+  if(returnTo){
+    S.sec=returnTo.sec||'home';
+    if(returnTo.sec==='files'){
+      S.path=returnTo.path||root();
+      S.mode=returnTo.mode||'dir';
+      S.reload=loadDir;
+    }
+  }else{
+    S.sec='zip';
+  }
   render();
-  loadZips();
+  // Volver a la carpeta desde la que se abrió el archivo, no a una pantalla ZIP vacía.
+  if(S.sec==='files')loadDir();
+  else if(S.sec==='zip'){S.zips=null;loadZips()}
 }
 async function openZip(path){
-  try{const d=await api('zipList',{path});S.zip={path,entries:d.entries,total:d.total,size:d.size,cwd:'',sel:new Set()};pushRecent({name:bn(path),path,dir:false,size:d.size,mtime:Date.now()});S.sec='zip';S.sel.clear();layerClose();closeDrawer();render();$('#view').scrollTop=0}
-  catch(e){fail(new Error('No se pudo abrir el ZIP: '+e.message))}
+  const returnTo={sec:S.sec,path:S.path,mode:S.mode};
+  try{
+    const d=await api('zipList',{path});
+    S.zip={path,entries:d.entries,total:d.total,size:d.size,cwd:'',sel:new Set(),returnTo};
+    pushRecent({name:bn(path),path,dir:false,size:d.size,mtime:Date.now()});
+    S.sec='zip';S.sel.clear();layerClose();closeDrawer();render();$('#view').scrollTop=0;
+  }catch(e){fail(new Error('No se pudo abrir el ZIP: '+e.message))}
 }
 async function zipExtract(entries){
   const z=S.zip,base=bn(z.path).replace(/\.[^.]+$/,''),dirp=dn(z.path);
