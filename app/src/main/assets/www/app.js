@@ -689,7 +689,7 @@ window.WFM={
     if(!$('#gate').hidden){return false}
     if(S.sel.size){S.sel.clear();render();return true}
     if(S.sec==='txt'&&S.ed){closeEditor();return true}
-    if(S.sec==='zip'&&S.zip){if(S.zip.cwd){S.zip.cwd=S.zip.cwd.replace(/[^/]+\\/$/,'');render()}else{closeZipViewer()}return true}
+    if(S.sec==='zip'&&S.zip){if(S.zip.cwd){S.zip.cwd=S.zip.cwd.replace(/[^/]+\/$/,'');render()}else{closeZipViewer()}return true}
     if(S.sec==='files'){
       if(S.mode==='search'){S.mode='dir';S.reload=loadDir;loadDir();render();return true}
       if(S.path&&S.path!==rootOf(S.path)){S.path=dn(S.path);loadDir();render();return true}
