@@ -311,6 +311,13 @@ function vZipOpen(v){
    <div class="info"><div class="nm">${esc(e.name)}</div><div class="sub">${e.dir?'carpeta':fsz(e.size)+(e.csize>=0?' · comp. '+fsz(e.csize):'')}</div></div>${ico('chev')}</div>`).join('')||'<div class="empty">ZIP VACÍO</div>'}</div>`;
   v.dataset.list='';
 }
+function closeZipViewer(){
+  S.zip=null;
+  // Si se abrió directamente desde Chrome, la lista puede no haberse cargado aún.
+  S.zips=null;
+  render();
+  loadZips();
+}
 async function openZip(path){
   try{const d=await api('zipList',{path});S.zip={path,entries:d.entries,total:d.total,size:d.size,cwd:'',sel:new Set()};pushRecent({name:bn(path),path,dir:false,size:d.size,mtime:Date.now()});S.sec='zip';S.sel.clear();layerClose();closeDrawer();render();$('#view').scrollTop=0}
   catch(e){fail(new Error('No se pudo abrir el ZIP: '+e.message))}
@@ -613,7 +620,7 @@ view.addEventListener('click',async e=>{
   if(b=t.closest('[data-z]')){const a=b.dataset.z;
     if(a==='find'){S.zips=null;render();return loadZips()}
     if(a==='make'){toast('Selecciona archivos en el Explorador y pulsa el icono ZIP');return go('files')}
-    if(a==='close'){S.zip=null;return render()}
+    if(a==='close')return closeZipViewer()
     if(a==='ext')return zipExtract(null);
     if(a==='extsel'&&S.zip.sel.size)return zipExtract([...S.zip.sel]);return}
   if(b=t.closest('[data-zb]')){S.zip.cwd=b.dataset.zb;return render()}
@@ -682,7 +689,7 @@ window.WFM={
     if(!$('#gate').hidden){return false}
     if(S.sel.size){S.sel.clear();render();return true}
     if(S.sec==='txt'&&S.ed){closeEditor();return true}
-    if(S.sec==='zip'&&S.zip){if(S.zip.cwd){S.zip.cwd=S.zip.cwd.replace(/[^/]+\/$/,'');render()}else{S.zip=null;render()}return true}
+    if(S.sec==='zip'&&S.zip){if(S.zip.cwd){S.zip.cwd=S.zip.cwd.replace(/[^/]+\\/$/,'');render()}else{closeZipViewer()}return true}
     if(S.sec==='files'){
       if(S.mode==='search'){S.mode='dir';S.reload=loadDir;loadDir();render();return true}
       if(S.path&&S.path!==rootOf(S.path)){S.path=dn(S.path);loadDir();render();return true}
