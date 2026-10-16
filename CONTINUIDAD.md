@@ -258,3 +258,10 @@ Enlaces:
 - El código nativo extrae la entrada a caché privada y lanza el instalador de Android usando un URI de FileProvider con permiso de lectura.
 - En Android 8 o posterior se comprueba `canRequestPackageInstalls()`. Si está desactivado, se abre el ajuste de «Instalar aplicaciones desconocidas» para W FILE MANAGER; al regresar, el usuario vuelve a tocar el APK.
 - El diálogo de instalación y la aprobación final siguen bajo control de Android. Pendiente de validar en dispositivo real.
+
+
+## Corrección de duplicados y Atrás del visor ZIP — 2026-10-16
+
+- Causa de duplicados: `handleIncomingFileIntent` copiaba siempre el URI recibido a la carpeta pública Descargas; si el ZIP original ya estaba allí, la lógica anti-sobrescritura creaba una segunda copia con sufijo. Ahora se intenta usar la ruta original (`file://` o `MediaStore.MediaColumns.DATA`) y solo si el proveedor no expone una ruta accesible se copia a la caché privada.
+- Causa del visor vacío al volver: el cierre ponía `S.zip=null` y ejecutaba `render()`, pero `S.sec` seguía siendo `zip`; si `S.zips` aún era `null` por apertura directa desde Chrome, la pantalla quedaba en «ESCANEANDO…» sin disparar la carga. Ahora el cierre centralizado limpia el estado, renderiza y llama a `loadZips()`; lo usan tanto Atrás como «Cerrar».
+- Pendiente: comprobar la compilación y probar en dispositivo real, especialmente proveedores de contenido que no exponen una ruta local.
