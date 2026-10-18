@@ -435,9 +435,9 @@ function renderDrawer(){
   $('#drawer').innerHTML=`<div class="dh"><div class="logo">W</div><div><b>W FILE MANAGER</b><small>CORPORATE · v1.0</small></div></div>
   <div class="dgrp">Secciones</div>${SECS.slice(0,5).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}
   <div class="dgrp">Categorías</div>${CATS.map(c=>`<button class="ditem" data-dc="${c.t}">${ico(c.i)}<span>${c.n}</span></button>`).join('')}
-  <div class="dgrp">Biblioteca</div>${SECS.slice(5,7).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}
+  <div class="dgrp">Biblioteca</div>${SECS.slice(6,8).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}
   <div class="dgrp">Almacenamiento</div>${S.roots.map((r,i)=>`<button class="ditem" data-dr="${i}">${ico('hdd')}<span>${esc(r.name)}</span></button>`).join('')}
-  <div class="dgrp">Sistema</div>${SECS.slice(7).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}`;
+  <div class="dgrp">Sistema</div>${SECS.slice(8).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}`;
 }
 
 /* ================= Acciones sobre archivos ================= */
