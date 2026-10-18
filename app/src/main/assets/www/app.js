@@ -231,11 +231,11 @@ function rowHtml(it,i,o){
   o=o||{};const k=kind(it),sel=S.sel.has(it.path),fav=S.favs.includes(it.path);
   const bytes=it.sizeBytes??it.size??0;const sub=it.dir?`${it.count} elem. · ${fdt(it.mtime)}`:`${fsz(bytes)} · ${fdt(it.mtime)}`;
   return `<div class="row ${sel?'sel':''}" data-i="${i}">${S.sel.size?`<div class="ck" data-item-icon title="Tocar para seleccionar">${ico('check')}</div>`:''}<div class="thumb" data-item-icon title="Tocar para seleccionar">${thumbOf(it)}</div>
-   <div class="info"><div class="nm">${esc(it.name)}</div><div class="sub">${o.path?esc(dn(it.path)):sub}</div></div>${fav?ico('star','star'):''}<button class="more" data-m="${i}">${ico('more')}</button></div>`;
+   <div class="info"><div class="nm"><span class="name-text">${esc(it.name)}</span></div><div class="sub">${o.path?esc(dn(it.path)):sub}</div></div>${fav?ico('star','star'):''}<button class="more" data-m="${i}">${ico('more')}</button></div>`;
 }
 function gridHtml(it,i){
   const k=kind(it),sel=S.sel.has(it.path);
-  return `<div class="gi ${k==='image'?'img':''} ${sel?'sel':''}" data-i="${i}"><div class="ck" data-item-icon title="Tocar para seleccionar">${ico('check')}</div><div class="gthumb" data-item-icon title="Tocar para seleccionar">${thumbOf(it,1)}</div><div class="gn">${esc(it.name)}</div></div>`;
+  return `<div class="gi ${k==='image'?'img':''} ${sel?'sel':''}" data-i="${i}"><div class="ck" data-item-icon title="Tocar para seleccionar">${ico('check')}</div><div class="gthumb" data-item-icon title="Tocar para seleccionar">${thumbOf(it,1)}</div><div class="gn"><span class="name-text">${esc(it.name)}</span></div></div>`;
 }
 function listHtml(items,o){
   if(!items.length)return `<div class="empty">${ico('folder')}<div>SIN ELEMENTOS</div></div>`;
@@ -605,12 +605,13 @@ let lpT=null,lpFired=false;
 const view=$('#view');
 function itemFromEl(el){const r=el.closest('[data-i]');if(!r)return null;const i=+r.dataset.i;const src=view.dataset.list==='rec'?S.rec:(view.dataset.list==='txt'?S.items:S.items);return {it:src[i],i,src}}
 view.addEventListener('pointerdown',e=>{
-  const r=e.target.closest('[data-i]');
-  if(!r||e.target.closest('[data-m]')||view.dataset.list!=='items')return;
+  const name=e.target.closest('.name-text');
+  const r=name&&name.closest('[data-i]');
+  if(!name||!r||e.target.closest('[data-m]')||view.dataset.list!=='items')return;
   lpFired=false;
   clearTimeout(lpT);
   lpT=setTimeout(()=>{
-    const x=itemFromEl(r);
+    const x=itemFromEl(name);
     if(!x||!x.it)return;
     lpFired=true;
     itemMenu(x.it);
@@ -620,11 +621,13 @@ view.addEventListener('pointerdown',e=>{
 ['pointerup','pointercancel','pointerleave'].forEach(t=>view.addEventListener(t,()=>clearTimeout(lpT)));
 view.addEventListener('scroll',()=>clearTimeout(lpT),{passive:true});
 view.addEventListener('contextmenu',e=>{
-  const r=e.target.closest('[data-i]');
+  const name=e.target.closest('.name-text');
+  if(!name)return;
+  const r=name.closest('[data-i]');
   if(!r)return;
   e.preventDefault();
   if(!lpFired){
-    const x=itemFromEl(r);
+    const x=itemFromEl(name);
     if(x&&x.it)itemMenu(x.it);
   }
 });
@@ -635,7 +638,7 @@ view.addEventListener('click',async e=>{
   let b;
   if(b=t.closest('[data-m]')){const x=itemFromEl(b);const src=view.dataset.list==='rec'?S.rec:S.items;return itemMenu(src[+b.dataset.m])}
   if(b=t.closest('[data-item-icon]')){const x=itemFromEl(b);if(!x||!x.it)return;const p=x.it.path;S.sel.has(p)?S.sel.delete(p):S.sel.add(p);return render()}
-  if(b=t.closest('.info,.gn')){const x=itemFromEl(b);if(x&&x.it)return itemMenu(x.it)}
+  if(b=t.closest('.name-text')){const x=itemFromEl(b);if(x&&x.it)return itemMenu(x.it)}
   if(b=t.closest('[data-bc]'))return openPath(b.dataset.bc);
   if(b=t.closest('[data-sx]')){S.mode='dir';S.reload=loadDir;loadDir();return render()}
   if(b=t.closest('[data-h]')){const h=b.dataset.h;
