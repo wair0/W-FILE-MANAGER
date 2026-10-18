@@ -224,12 +224,12 @@ async function hydrateThumbs(){
 function rowHtml(it,i,o){
   o=o||{};const k=kind(it),sel=S.sel.has(it.path),fav=S.favs.includes(it.path);
   const sub=it.dir?`${it.count} elem. · ${fdt(it.mtime)}`:`${fsz(it.size)} · ${fdt(it.mtime)}`;
-  return `<div class="row ${sel?'sel':''}" data-i="${i}">${S.sel.size?`<div class="ck">${ico('check')}</div>`:''}<div class="thumb">${thumbOf(it)}</div>
+  return `<div class="row ${sel?'sel':''}" data-i="${i}">${S.sel.size?`<div class="ck" data-item-icon title="Tocar para seleccionar">${ico('check')}</div>`:''}<div class="thumb" data-item-icon title="Tocar para seleccionar">${thumbOf(it)}</div>
    <div class="info"><div class="nm">${esc(it.name)}</div><div class="sub">${o.path?esc(dn(it.path)):sub}</div></div>${fav?ico('star','star'):''}<button class="more" data-m="${i}">${ico('more')}</button></div>`;
 }
 function gridHtml(it,i){
   const k=kind(it),sel=S.sel.has(it.path);
-  return `<div class="gi ${k==='image'?'img':''} ${sel?'sel':''}" data-i="${i}"><div class="ck">${ico('check')}</div>${thumbOf(it,1)}<div class="gn">${esc(it.name)}</div></div>`;
+  return `<div class="gi ${k==='image'?'img':''} ${sel?'sel':''}" data-i="${i}"><div class="ck" data-item-icon title="Tocar para seleccionar">${ico('check')}</div><div class="gthumb" data-item-icon title="Tocar para seleccionar">${thumbOf(it,1)}</div><div class="gn">${esc(it.name)}</div></div>`;
 }
 function listHtml(items,o){
   if(!items.length)return `<div class="empty">${ico('folder')}<div>SIN ELEMENTOS</div></div>`;
@@ -623,6 +623,8 @@ view.addEventListener('click',async e=>{
   if(lpFired){lpFired=false;return}
   let b;
   if(b=t.closest('[data-m]')){const x=itemFromEl(b);const src=view.dataset.list==='rec'?S.rec:S.items;return itemMenu(src[+b.dataset.m])}
+  if(b=t.closest('[data-item-icon]')){const x=itemFromEl(b);if(!x||!x.it)return;const p=x.it.path;S.sel.has(p)?S.sel.delete(p):S.sel.add(p);return render()}
+  if(b=t.closest('.info,.gn')){const x=itemFromEl(b);if(x&&x.it)return itemMenu(x.it)}
   if(b=t.closest('[data-bc]'))return openPath(b.dataset.bc);
   if(b=t.closest('[data-sx]')){S.mode='dir';S.reload=loadDir;loadDir();return render()}
   if(b=t.closest('[data-h]')){const h=b.dataset.h;
