@@ -38,7 +38,9 @@ object FileOps {
         put("name", name)
         put("path", absolutePath)
         put("dir", isDirectory)
-        put("size", if (isDirectory) 0L else length())
+        put("size", if (isFile) length() else 0L)
+        // Campo explícito en bytes para que la interfaz no confunda el tamaño con otra propiedad.
+        put("sizeBytes", if (isFile) length() else 0L)
         put("mtime", lastModified())
         put("count", if (isDirectory) (list()?.size ?: 0) else 0)
     }
