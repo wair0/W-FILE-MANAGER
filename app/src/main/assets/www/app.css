@@ -262,3 +262,16 @@ pre.pv{max-height:50vh;overflow:auto;background:rgba(0,0,0,.4);border:1px solid 
 .video-stage video{object-fit:contain}
 .audio-stage{align-items:center}
 .audio-stage audio{width:min(100%,420px)}
+
+/* Progreso de operaciones de archivos */
+.progress-overlay{position:absolute;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(0,4,12,.78);backdrop-filter:blur(5px)}
+.progress-overlay[hidden]{display:none}
+.progress-card{width:100%;max-width:360px;padding:24px 20px 20px;border:1px solid var(--cyan);border-radius:12px;background:linear-gradient(160deg,#0b1736,#050b1a);box-shadow:0 0 36px rgba(0,229,255,.2);text-align:center}
+.progress-spinner{width:32px;height:32px;margin:0 auto 14px;border:3px solid rgba(0,229,255,.16);border-top-color:var(--cyan);border-right-color:var(--violet);border-radius:50%;animation:progressSpin .8s linear infinite}
+.progress-card h3{font-size:15px;color:var(--cyan);margin-bottom:8px}
+.progress-card p{font-size:12px;line-height:1.45;color:var(--mut);margin-bottom:18px}
+.progress-track{height:5px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.09);margin-bottom:14px}
+.progress-track i{display:block;width:38%;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--cyan),var(--violet));animation:progressSweep 1.25s ease-in-out infinite}
+.progress-card span{font:10px var(--mono);letter-spacing:.08em;color:var(--mut)}
+@keyframes progressSpin{to{transform:rotate(360deg)}}
+@keyframes progressSweep{0%{transform:translateX(-110%)}100%{transform:translateX(290%)}}
