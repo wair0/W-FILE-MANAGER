@@ -34,13 +34,23 @@ object FileOps {
     fun mime(name: String): String =
         MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext(name)) ?: "application/octet-stream"
 
+    /** Obtiene el tamaño real en bytes desde el sistema de archivos; length() queda como respaldo. */
+    private fun File.actualSizeBytes(): Long {
+        if (!isFile) return 0L
+        return try {
+            android.system.Os.stat(absolutePath).st_size
+        } catch (_: Exception) {
+            length()
+        }
+    }
+
     private fun File.toJson(): JSONObject = JSONObject().apply {
+        val exactSize = actualSizeBytes()
         put("name", name)
         put("path", absolutePath)
         put("dir", isDirectory)
-        put("size", if (isFile) length() else 0L)
-        // Campo explícito en bytes para que la interfaz no confunda el tamaño con otra propiedad.
-        put("sizeBytes", if (isFile) length() else 0L)
+        put("size", exactSize)
+        put("sizeBytes", exactSize)
         put("mtime", lastModified())
         put("count", if (isDirectory) (list()?.size ?: 0) else 0)
     }
