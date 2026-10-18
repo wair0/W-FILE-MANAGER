@@ -50,17 +50,22 @@ const KI={folder:'folder',image:'image',video:'video',audio:'music',zip:'zip',ap
 let pendingN=0,busyN=0;const pend={};
 window.WFM_CB=(id,json)=>{const p=pend[id];if(!p)return;delete pend[id];let r;try{r=JSON.parse(json)}catch(e){return p.rej(e)}r.ok?p.res(r.data):p.rej(new Error(r.error))};
 function busy(d){busyN=Math.max(0,busyN+d);$('#busy').classList.toggle('on',busyN>0)}
+let progressCount=0;
+const progressLabels={delete:'Enviando elementos a la papelera…',copy:'Copiando archivos…',move:'Moviendo archivos…',zipExtract:'Extrayendo archivos…',zipCreate:'Creando archivo ZIP…',trashEmpty:'Vaciando papelera…',trashDelete:'Eliminando definitivamente…',trashRestore:'Restaurando elemento…'};
+function showProgress(m){const p=$('#progress');if(!p)return;progressCount++;p.hidden=false;$('#progress-title').textContent=progressLabels[m]||'Procesando archivos…';$('#progress-detail').textContent='La operación puede tardar según el tamaño y la cantidad de elementos.'}
+function hideProgress(){progressCount=Math.max(0,progressCount-1);if(!progressCount){const p=$('#progress');if(p)p.hidden=true}}
 function api(m,a){
+  const hasProgress=!!progressLabels[m];if(hasProgress)showProgress(m);
   busy(1);
   const p=window.WFM_MOCK?window.WFM_MOCK.call(m,a||{}):new Promise((res,rej)=>{const id=++pendingN;pend[id]={res,rej};try{WBridge.call(id,m,JSON.stringify(a||{}))}catch(e){delete pend[id];rej(e)}});
-  return p.finally(()=>busy(-1));
+  return p.finally(()=>{busy(-1);if(hasProgress)hideProgress()});
 }
 const furl=p=>window.WFM_MOCK?window.WFM_MOCK.url(p):'https://wfile.local/f?p='+encodeURIComponent(p);
 
 /* ================= Estado ================= */
 const S={sec:'home',path:null,items:[],mode:'dir',q:'',view:store.get('view','list'),sort:store.get('sort','name'),asc:store.get('asc',true),hidden:store.get('hidden',false),
  sel:new Set(),clip:null,favs:store.get('favs',[]),rec:store.get('rec',[]),roots:[],perm:{all:false},cat:null,zip:null,ed:null,storage:null,zips:null,txts:null,reload:null};
-const SECS=[{id:'home',t:'Inicio',i:'home'},{id:'files',t:'Explorador',i:'folder'},{id:'images',t:'Imágenes',i:'image'},{id:'zip',t:'Visor ZIP',i:'zip'},{id:'txt',t:'Editor TXT',i:'text'},
+const SECS=[{id:'home',t:'Inicio',i:'home'},{id:'files',t:'Explorador',i:'folder'},{id:'images',t:'Imágenes',i:'image'},{id:'zip',t:'Visor ZIP',i:'zip'},{id:'txt',t:'Editor TXT',i:'text'},{id:'trash',t:'Papelera',i:'trash'},
  {id:'recent',t:'Recientes',i:'clock'},{id:'favs',t:'Favoritos',i:'star'},{id:'settings',t:'Ajustes',i:'settings'},{id:'about',t:'Acerca de',i:'info'}];
 const CATS=[{t:'video',n:'Videos',i:'video'},{t:'audio',n:'Audio',i:'music'},{t:'doc',n:'Documentos',i:'doc'},{t:'apk',n:'APK',i:'apk'}];
 const NAV=['home','files'];
@@ -128,6 +133,7 @@ function go(sec,o){
   else if(sec==='txt'){S.reload=null;if(!S.txts)loadTxts();}
   else if(sec==='home'){loadHome()}
   else if(sec==='favs'){S.items=[];S.reload=loadFavs;loadFavs()}
+  else if(sec==='trash'){S.items=[];S.reload=loadTrash;loadTrash()}
   else if(sec==='recent'){S.reload=null}
   render();$('#view').scrollTop=0;
 }
@@ -177,7 +183,7 @@ function render(){
   $('#nav').innerHTML=NAV.map(id=>{const s=SECS.find(x=>x.id===id);return `<button data-n="${id}" class="${nv===id?'on':''}">${ico(s.i)}<span>${esc(id==='zip'?'ZIP':id==='txt'?'TXT':id==='files'?'Archivos':s.t)}</span></button>`}).join('');
   $('#nav').style.display=edit?'none':'';
   const v=$('#view');
-  const fn={home:vHome,files:vFiles,cat:vFiles,zip:vZip,txt:vTxt,recent:vRecent,favs:vFavs,settings:vSettings,about:vAbout}[S.sec];
+  const fn={home:vHome,files:vFiles,cat:vFiles,zip:vZip,txt:vTxt,recent:vRecent,favs:vFavs,trash:vTrash,settings:vSettings,about:vAbout}[S.sec];
   v.style.padding=edit?'0':'';v.style.overflow=edit?'hidden':'';const st=v.scrollTop;fn(v);v.scrollTop=st;
   if(!edit)hydrateThumbs();
   bars();
@@ -278,6 +284,11 @@ function vFiles(v){
   v.dataset.list='items';
 }
 function vRecent(v){S.items=S.rec;v.innerHTML=`<div class="stitle">Archivos recientes</div>${listHtml(S.items,{path:1})}`;v.dataset.list='items'}
+async function loadTrash(){try{S.items=await api('trashList')}catch(e){S.items=[];fail(e)}if(S.sec==='trash')render()}
+function vTrash(v){
+  v.innerHTML=`<div class="stitle">Papelera de reciclaje · ${S.items.length}</div><div class="btns" style="margin-bottom:10px"><button class="btn" data-tr="empty" ${S.items.length?'':'disabled'}>${ico('trash')} Vaciar papelera</button></div>${S.items.length?`<div class="list">${S.items.map((it,i)=>`<div class="row" data-ti="${i}"><div class="thumb">${ico(it.dir?'folder':KI[kind(it)],'k-'+(it.dir?'folder':kind(it)))}</div><div class="info"><div class="nm">${esc(it.name)}</div><div class="sub">Eliminado · ${fdt(it.mtime)}${it.originalPath?' · '+esc(dn(it.originalPath)):''}</div></div><button class="more" data-tr="menu" data-ti="${i}">${ico('more')}</button></div>`).join('')}</div>`:'<div class="empty">'+ico('trash')+'<div>LA PAPELERA ESTÁ VACÍA</div></div>'}`;
+  v.dataset.list='';
+}
 async function loadFavs(){
   const out=[];
   for(const p of S.favs){try{const t=await api('stat',{path:p});out.push({name:t.name,path:p,dir:t.dir,size:t.size,mtime:t.mtime,count:0})}catch(e){}}
@@ -433,7 +444,7 @@ function vAbout(v){
 function renderDrawer(){
   const nv=S.sec==='cat'&&S.cat.type==='image'?'images':S.sec;
   $('#drawer').innerHTML=`<div class="dh"><div class="logo">W</div><div><b>W FILE MANAGER</b><small>CORPORATE · v1.0</small></div></div>
-  <div class="dgrp">Secciones</div>${SECS.slice(0,5).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}
+  <div class="dgrp">Secciones</div>${SECS.slice(0,6).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}
   <div class="dgrp">Categorías</div>${CATS.map(c=>`<button class="ditem" data-dc="${c.t}">${ico(c.i)}<span>${c.n}</span></button>`).join('')}
   <div class="dgrp">Biblioteca</div>${SECS.slice(6,8).map(s=>`<button class="ditem ${nv===s.id?'on':''}" data-d="${s.id}">${ico(s.i)}<span>${s.t}</span></button>`).join('')}
   <div class="dgrp">Almacenamiento</div>${S.roots.map((r,i)=>`<button class="ditem" data-dr="${i}">${ico('hdd')}<span>${esc(r.name)}</span></button>`).join('')}
@@ -654,6 +665,8 @@ view.addEventListener('click',async e=>{
       let from=ta.selectionEnd,i=ta.value.toLowerCase().indexOf(q.toLowerCase(),from);if(i<0)i=ta.value.toLowerCase().indexOf(q.toLowerCase());
       if(i<0)return toast('Sin resultados',true);ta.focus();ta.setSelectionRange(i,i+q.length);
       const ln=ta.value.slice(0,i).split('\n').length;ta.scrollTop=Math.max(0,(ln-3)*S.ed.fs*1.55);return}return}
+  if(b=t.closest('[data-tr]')){const a=b.dataset.tr,it=S.items[+(b.dataset.ti||0)];if(a==='empty'){const ok=await dialog({title:'Vaciar papelera',msg:'Se eliminarán definitivamente todos los elementos de la papelera.',ok:'Vaciar',danger:true});if(ok){try{const n=await api('trashEmpty',{});toast('Papelera vaciada ('+n+')');loadTrash()}catch(err){fail(err)}}return}if(a==='menu'&&it){return sheet(it.name,[{i:'refresh',t:'Restaurar',f:async()=>{try{await api('trashRestore',{path:it.path});toast('Restaurado');loadTrash()}catch(err){fail(err)}}},{i:'trash',t:'Eliminar definitivamente',d:1,f:async()=>{const ok=await dialog({title:'Eliminar definitivamente',msg:'No se podrá recuperar este elemento.',ok:'Eliminar',danger:true});if(ok)try{await api('trashDelete',{path:it.path});loadTrash()}catch(err){fail(err)}}}])}return}
+  if(b=t.closest('[data-ti]')){const it=S.items[+b.dataset.ti];if(it)return sheet(it.name,[{i:'refresh',t:'Restaurar',f:async()=>{try{await api('trashRestore',{path:it.path});toast('Restaurado');loadTrash()}catch(err){fail(err)}}},{i:'trash',t:'Eliminar definitivamente',d:1,f:async()=>{const ok=await dialog({title:'Eliminar definitivamente',msg:'No se podrá recuperar este elemento.',ok:'Eliminar',danger:true});if(ok)try{await api('trashDelete',{path:it.path});loadTrash()}catch(err){fail(err)}}}])}
   if(b=t.closest('[data-set]')){const s=b.dataset.set;
     if(s==='hidden'){S.hidden=!S.hidden;store.set('hidden',S.hidden)}
     else if(s==='asc'){S.asc=!S.asc;store.set('asc',S.asc)}
