@@ -195,11 +195,94 @@ object FileOps {
         return dst.absolutePath
     }
 
+    // ---------- Papelera de reciclaje ----------
+    private fun trashDir(): File {
+        val dir = File(Environment.getExternalStorageDirectory(), ".WFileManagerTrash")
+        if (!dir.exists() && !dir.mkdirs()) throw IOException("No se pudo crear la papelera")
+        return dir
+    }
+
+    private fun metaFor(item: File): File = File(item.parentFile, item.name + ".wfmmeta")
+
     fun delete(paths: JSONArray): Int {
+        val trash = trashDir()
         var n = 0
         for (i in 0 until paths.length()) {
-            val f = File(paths.getString(i))
-            if (f.deleteRecursively()) n++
+            val src = File(paths.getString(i))
+            if (!src.exists()) continue
+            if (isInside(src, trash)) {
+                if (src.deleteRecursively()) n++
+                metaFor(src).delete()
+                continue
+            }
+            val target = uniqueDest(trash, "${System.currentTimeMillis()}_${src.name}")
+            val meta = JSONObject().put("originalPath", src.absolutePath)
+                .put("deletedAt", System.currentTimeMillis()).put("name", src.name)
+            if (src.renameTo(target)) {
+                metaFor(target).writeText(meta.toString())
+                n++
+            } else {
+                // Mismo volumen normalmente permite renombrar; para casos excepcionales se copia primero.
+                if (src.copyRecursively(target, false)) {
+                    if (src.deleteRecursively()) {
+                        metaFor(target).writeText(meta.toString())
+                        n++
+                    } else target.deleteRecursively()
+                }
+            }
+        }
+        return n
+    }
+
+    fun trashList(): JSONArray {
+        val dir = trashDir()
+        val out = JSONArray()
+        dir.listFiles()?.filter { it.name.endsWith(".wfmmeta").not() }?.forEach { item ->
+            val metaFile = metaFor(item)
+            if (!item.exists() || !metaFile.isFile) return@forEach
+            try {
+                val meta = JSONObject(metaFile.readText())
+                out.put(JSONObject().put("name", meta.optString("name", item.name))
+                    .put("path", item.absolutePath).put("originalPath", meta.optString("originalPath", ""))
+                    .put("dir", item.isDirectory).put("size", if (item.isFile) item.length() else 0L)
+                    .put("mtime", meta.optLong("deletedAt", item.lastModified()))
+                    .put("count", if (item.isDirectory) (item.list()?.size ?: 0) else 0))
+            } catch (_: Exception) { }
+        }
+        return out
+    }
+
+    fun trashRestore(path: String): String {
+        val item = File(path)
+        val metaFile = metaFor(item)
+        if (!item.exists() || !metaFile.isFile || !isInside(item, trashDir()))
+            throw IOException("El elemento ya no está en la papelera")
+        val original = JSONObject(metaFile.readText()).optString("originalPath", "")
+        val parent = File(original).parentFile
+        val destDir = if (parent != null && parent.isDirectory) parent else Environment.getExternalStorageDirectory()
+        val target = uniqueDest(destDir, File(original).name.ifBlank { item.name.substringAfter('_', item.name) })
+        if (!item.renameTo(target)) {
+            item.copyRecursively(target, false)
+            if (!item.deleteRecursively()) throw IOException("No se pudo completar la restauración")
+        }
+        metaFile.delete()
+        return target.absolutePath
+    }
+
+    fun trashDelete(path: String): Boolean {
+        val item = File(path)
+        if (!isInside(item, trashDir())) throw IOException("Ruta de papelera no válida")
+        val ok = item.deleteRecursively()
+        metaFor(item).delete()
+        return ok
+    }
+
+    fun trashEmpty(): Int {
+        val items = trashList()
+        var n = 0
+        for (i in 0 until items.length()) {
+            val path = items.getJSONObject(i).getString("path")
+            if (trashDelete(path)) n++
         }
         return n
     }
