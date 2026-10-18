@@ -229,7 +229,7 @@ async function hydrateThumbs(){
 }
 function rowHtml(it,i,o){
   o=o||{};const k=kind(it),sel=S.sel.has(it.path),fav=S.favs.includes(it.path);
-  const sub=it.dir?`${it.count} elem. · ${fdt(it.mtime)}`:`${fsz(it.size)} · ${fdt(it.mtime)}`;
+  const bytes=it.sizeBytes??it.size??0;const sub=it.dir?`${it.count} elem. · ${fdt(it.mtime)}`:`${fsz(bytes)} · ${fdt(it.mtime)}`;
   return `<div class="row ${sel?'sel':''}" data-i="${i}">${S.sel.size?`<div class="ck" data-item-icon title="Tocar para seleccionar">${ico('check')}</div>`:''}<div class="thumb" data-item-icon title="Tocar para seleccionar">${thumbOf(it)}</div>
    <div class="info"><div class="nm">${esc(it.name)}</div><div class="sub">${o.path?esc(dn(it.path)):sub}</div></div>${fav?ico('star','star'):''}<button class="more" data-m="${i}">${ico('more')}</button></div>`;
 }
