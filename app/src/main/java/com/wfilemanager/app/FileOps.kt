@@ -223,11 +223,15 @@ object FileOps {
                 n++
             } else {
                 // Mismo volumen normalmente permite renombrar; para casos excepcionales se copia primero.
-                if (src.copyRecursively(target, false)) {
+                try {
+                    src.copyRecursively(target, overwrite = false)
                     if (src.deleteRecursively()) {
                         metaFor(target).writeText(meta.toString())
                         n++
                     } else target.deleteRecursively()
+                } catch (e: Exception) {
+                    target.deleteRecursively()
+                    throw IOException("No se pudo mover a la papelera: ${src.name}", e)
                 }
             }
         }
