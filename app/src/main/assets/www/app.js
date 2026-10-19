@@ -50,15 +50,28 @@ const KI={folder:'folder',image:'image',video:'video',audio:'music',zip:'zip',ap
 let pendingN=0,busyN=0;const pend={};
 window.WFM_CB=(id,json)=>{const p=pend[id];if(!p)return;delete pend[id];let r;try{r=JSON.parse(json)}catch(e){return p.rej(e)}r.ok?p.res(r.data):p.rej(new Error(r.error))};
 function busy(d){busyN=Math.max(0,busyN+d);$('#busy').classList.toggle('on',busyN>0)}
-let progressCount=0;
+let progressId=0;
+const activeProgress=new Set();
 const progressLabels={delete:'Enviando elementos a la papelera…',copy:'Copiando archivos…',move:'Moviendo archivos…',zipExtract:'Extrayendo archivos…',zipCreate:'Creando archivo ZIP…',trashEmpty:'Vaciando papelera…',trashDelete:'Eliminando definitivamente…',trashRestore:'Restaurando elemento…'};
-function showProgress(m){const p=$('#progress');if(!p)return;progressCount++;p.hidden=false;$('#progress-title').textContent=progressLabels[m]||'Procesando archivos…';$('#progress-detail').textContent='La operación puede tardar según el tamaño y la cantidad de elementos.'}
-function hideProgress(){progressCount=Math.max(0,progressCount-1);if(!progressCount){const p=$('#progress');if(p)p.hidden=true}}
+function showProgress(m){
+  const p=$('#progress');if(!p)return null;
+  const token=++progressId;activeProgress.add(token);p.hidden=false;
+  $('#progress-title').textContent=progressLabels[m]||'Procesando archivos…';
+  $('#progress-detail').textContent='La operación puede tardar según el tamaño y la cantidad de elementos.';
+  return token;
+}
+function hideProgress(token){
+  if(token!=null)activeProgress.delete(token);
+  const p=$('#progress');if(p)p.hidden=activeProgress.size===0;
+}
 function api(m,a){
-  const hasProgress=!!progressLabels[m];if(hasProgress)showProgress(m);
+  const hasProgress=!!progressLabels[m],token=hasProgress?showProgress(m):null;
   busy(1);
+  let watchdog=null;
   const p=window.WFM_MOCK?window.WFM_MOCK.call(m,a||{}):new Promise((res,rej)=>{const id=++pendingN;pend[id]={res,rej};try{WBridge.call(id,m,JSON.stringify(a||{}))}catch(e){delete pend[id];rej(e)}});
-  return p.finally(()=>{busy(-1);if(hasProgress)hideProgress()});
+  // Evita dejar la interfaz bloqueada indefinidamente si Android no devuelve el callback.
+  const guarded=Promise.race([p,new Promise((_,rej)=>{watchdog=setTimeout(()=>rej(new Error('La operación está tardando demasiado. La ventana de progreso se cerró; comprueba si el cambio se completó antes de volver a intentarlo.')),180000)})]);
+  return guarded.finally(()=>{if(watchdog!==null)clearTimeout(watchdog);busy(-1);if(hasProgress)hideProgress(token)});
 }
 const furl=p=>window.WFM_MOCK?window.WFM_MOCK.url(p):'https://wfile.local/f?p='+encodeURIComponent(p);
 
